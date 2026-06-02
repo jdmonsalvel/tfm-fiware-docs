@@ -21,7 +21,7 @@ La tercera contribución es el **pipeline de seguridad formalizado**: un flujo C
 | OE-3: Implementación IaC con Terraform | ✅ Cumplido | Framework de 25 módulos, VPC + EKS + bootstrap de addons |
 | OE-4: Repositorio GitOps con App of Apps | ✅ Cumplido | ArgoCD con 5 Applications FIWARE en producción, Sync Waves |
 | OE-5: Pipeline CI/CD con validación de seguridad | ✅ Cumplido | 4 workflows de GitHub Actions operativos |
-| OE-6: Validación con métricas operacionales | 🔄 En progreso | Smoke test E2E pendiente de ejecución completa |
+| OE-6: Validación con métricas operacionales | ✅ Cumplido parcialmente | KPIs RD-1/2/3, RS-2, SE-1/2, CF-2 validados. SE-3 y CF-1 completo pendientes de Kong (ADR-006) |
 
 **Limitaciones**
 

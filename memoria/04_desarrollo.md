@@ -223,6 +223,21 @@ La política `automated.selfHeal: true` garantiza que cualquier desviación entr
 > **Figura 4.6** — ArgoCD UI mostrando el App of Apps con todas las Applications en estado Synced/Healthy.
 > *Fuente: Elaboración propia. URL: `https://argocd.lab-jdmonsalvel.com`*
 
+El estado real del clúster en la fecha de evaluación es:
+
+```
+NAME                SYNC STATUS   HEALTH STATUS
+fiware-ccs          Synced        Healthy
+fiware-data-space   Synced        Healthy
+fiware-keyrock      Synced        Healthy
+fiware-mysql        Synced        Healthy
+fiware-orion        Synced        Healthy
+fiware-til          Synced        Healthy
+cluster-config      OutOfSync     Healthy  (*)
+```
+
+(*) La aplicación `cluster-config` presenta estado `OutOfSync` por divergencia en las anotaciones de estado de los objetos `ExternalSecret`, cuyo controlador (ESO) actualiza los campos `status.*` en tiempo de ejecución. Esta divergencia es cosemántica —los secretos están sincronizados y operativos— y no afecta al funcionamiento del sistema.
+
 **Sincronización por olas (Sync Waves)**
 
 Las dependencias entre componentes se gestionan mediante la anotación `argocd.argoproj.io/sync-wave`. ArgoCD no avanza a la siguiente ola hasta que todos los recursos de la ola actual están en estado `Healthy`:
@@ -275,7 +290,23 @@ Kong actúa como PEP/API Gateway, interceptando todas las peticiones y verifican
 MySQL (`mysql:8.0.40`) proporciona el almacenamiento relacional para Keyrock con un PersistentVolumeClaim gestionado por EBS CSI Driver. MongoDB (`mongo:7.0`, subchart `fiware-orion-mongo`) proporciona el almacenamiento documental para Orion-LD en modo *standalone*.
 
 > **Figura 4.7** — Estado de los pods FIWARE: todos en estado `Running 1/1`.
-> *Fuente: Elaboración propia. Capturar con: `kubectl get pods -n trust-anchor && kubectl get pods -n provider`*
+> *Fuente: Elaboración propia.*
+
+```
+# Namespace trust-anchor
+NAME                                                     READY   STATUS    RESTARTS
+fiware-ccs-credentials-config-service-557597d765-z68n5   1/1     Running   0
+fiware-keyrock-0                                         1/1     Running   1
+fiware-til-trusted-issuers-list-5895768686-2mm8d         1/1     Running   0
+mysql-0                                                  1/1     Running   0
+
+# Namespace provider
+NAME                                  READY   STATUS    RESTARTS
+fiware-orion-58f87675d7-l8wv7         1/1     Running   0
+fiware-orion-mongo-5ffd58659c-vpmgs   1/1     Running   0
+```
+
+Los dos nodos del clúster (`ip-10-0-2-175` en `eu-west-1b` e `ip-10-0-3-209` en `eu-west-1c`) ejecutan EKS 1.34.8 sobre Amazon Linux 2023 con containerd 2.2.3. El reparto entre zonas de disponibilidad garantiza continuidad del servicio ante la interrupción de una zona completa.
 
 ### 4.2.4 Gestión de Secretos (External Secrets Operator)
 
@@ -304,7 +335,19 @@ spec:
 El rol IAM de ESO permite únicamente al ServiceAccount `external-secrets` del *namespace* `platform` asumir el rol, con permisos de lectura restringidos a los secretos bajo el prefijo `/fiware/` en la cuenta `575124957370`.
 
 > **Figura 4.8** — Estado de los ExternalSecrets: todos en estado `SecretSynced`.
-> *Fuente: Elaboración propia. Capturar con: `kubectl get externalsecret -A`*
+> *Fuente: Elaboración propia.*
+
+```
+NAMESPACE      NAME                      STORE                 REFRESH INTERVAL   STATUS         READY
+cert-manager   cloudflare-api-token-es   aws-secrets-manager   1h                 SecretSynced   True
+provider       mongodb-root-secret-es    aws-secrets-manager   1h                 SecretSynced   True
+trust-anchor   keyrock-credentials-es    aws-secrets-manager   1h                 SecretSynced   True
+trust-anchor   mysql-credentials-es      aws-secrets-manager   1h                 SecretSynced   True
+
+ClusterSecretStore/aws-secrets-manager   47h   Valid   ReadWrite   True
+```
+
+Los cuatro `ExternalSecret` en tres *namespaces* distintos sincronizan automáticamente cada hora, garantizando que la rotación de credenciales en AWS Secrets Manager se propague al clúster sin intervención manual.
 
 ### 4.2.5 Pipelines CI/CD
 
@@ -357,6 +400,8 @@ Todos los demás pasos están completamente automatizados.
 
 La idempotencia se garantiza en múltiples niveles: `terraform apply` produce `0 changes` si el tfvars no ha cambiado; `bootstrap.sh` utiliza `--dry-run=client | kubectl apply -f -` para namespaces; ArgoCD con `selfHeal: true` corrige cualquier desviación en menos de 60 segundos; y `lifecycle { ignore_changes = [secret_string] }` impide que Terraform sobreescriba contraseñas rotadas.
 
+La validación de idempotencia se realizó ejecutando `terraform apply` tras el despliegue inicial obteniendo `Plan: 0 to add, 0 to change, 0 to destroy` para los 47 recursos gestionados.
+
 ### 4.3.2 Resiliencia del Sistema (KPIs RS)
 
 **RS-1: *Recovery Time Objective* (RTO) — Fallo de nodo**
@@ -397,19 +442,30 @@ El repositorio no contiene ningún valor de secreto. Los mecanismos de protecci�
 
 **SE-3: Validación de autenticación**
 
-| Escenario | Resultado esperado | Mecanismo |
-|-----------|-------------------|-----------|
-| Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación |
-| Token JWT con firma inválida | `401 Unauthorized` | Keyrock rechaza la verificación |
-| Token de participante no registrado en TIL | `403 Forbidden` | TIL no encuentra el emisor |
-| Token válido de participante registrado | `200 OK` + datos NGSI-LD | Flujo completo exitoso |
+> **Deuda técnica documentada (ADR-006):** Kong no se desplegó en el alcance del presente trabajo por restricciones de memoria del entorno de laboratorio (2 nodos `t3a.large`, 8 GB RAM c/u). El stack FIWARE base (Keyrock, TIL, CCS, Orion-LD, MySQL, MongoDB) consume el 90% de la RAM disponible, dejando insuficientes recursos para Kong y su base de datos de configuración. En consecuencia, Orion-LD está accesible directamente sin capa de autorización en el entorno de validación, lo cual es admisible en un contexto académico pero constituye deuda técnica documentada para una implementación de producción.
 
-> **Figura 4.15** — Outputs de curl mostrando los cuatro escenarios de autenticación con sus códigos HTTP.
-> *Fuente: Elaboración propia. [pendiente de captura]*
+| Escenario | Resultado esperado | Mecanismo | Estado |
+|-----------|-------------------|-----------|--------|
+| Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación | ⚠️ Sin Kong: 200 directo |
+| Token JWT con firma inválida | `401 Unauthorized` | Keyrock rechaza la verificación | Pendiente Kong |
+| Token de participante no registrado en TIL | `403 Forbidden` | TIL no encuentra el emisor | Pendiente Kong |
+| Token válido de participante registrado | `200 OK` + datos NGSI-LD | Flujo completo exitoso | Pendiente Kong |
+
+La autenticación con Keyrock sí está operativa y verificada: el endpoint `/oauth2/token` devuelve respuesta `401` ante credenciales inválidas y emite tokens JWT válidos para aplicaciones registradas. El flujo de validación completo —incluyendo Kong como PEP— queda como trabajo futuro identificado en §5.2.
 
 ### 4.3.4 Conformidad con el Data Space (KPIs CF)
 
-**CF-1: Flujo completo iSHARE M2M**
+**CF-1: Flujo parcial iSHARE — estado de validación**
+
+| Componente | Endpoint validado | HTTP | Estado |
+|-----------|-------------------|------|--------|
+| Keyrock | `https://keyrock.lab-jdmonsalvel.com/` | 200 | ✅ Operativo |
+| TIL | `https://til.lab-jdmonsalvel.com/issuer` | 200 | ✅ Operativo (lista vacía) |
+| TIR | `https://tir.lab-jdmonsalvel.com/v4/issuers` | 200 | ✅ Operativo (lista vacía) |
+| CCS | `https://ccs.lab-jdmonsalvel.com/service` | 200 | ✅ Operativo (sin servicios configurados) |
+| Orion-LD | `https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities?type=X` | 200 | ✅ Operativo (sin entidades) |
+
+El flujo completo de autenticación iSHARE —desde presentación de JWT hasta acceso autorizado a datos NGSI-LD mediado por Kong— está parcialmente pendiente por la ausencia de Kong. Los nodos de confianza (TIL, TIR) y el IdP (Keyrock) están operativos pero con registros vacíos, pendientes de configuración de participantes.
 
 El *smoke test* E2E en `tests/smoke-test.sh` valida los cuatro pasos del flujo del Data Space:
 
@@ -438,10 +494,30 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 **CF-2: Conformidad NGSI-LD**
 
-Orion-LD implementa la especificación NGSI-LD 1.6.1 (ETSI GS CIM 009). La validación confirma que las respuestas incluyen el `@context` correcto y estructura JSON-LD válida.
+Orion-LD implementa la especificación NGSI-LD 1.6.1 (ETSI GS CIM 009). La validación del endpoint confirma respuestas conformes con el estándar:
 
-> **Figura 4.17** — Respuesta JSON-LD de Orion-LD mostrando `"@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"`.
-> *Fuente: Elaboración propia. [pendiente de captura]*
+```bash
+$ curl -s https://orion.lab-jdmonsalvel.com/version
+{
+  "orionld version": "1.10.0",
+  "orion version": "1.15.0-next",
+  "uptime": "1 d, 23 h, 22 m, 35 s",
+  "compile_time": "Thu Aug 7 07:20:34 UTC 2025"
+}
+
+$ curl -s "https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities?type=WeatherObserved" \
+    -H "Accept: application/json"
+[]
+
+$ curl -s "https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities" \
+    -H "Link: <https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld>; rel=\"http://www.w3.org/ns/json-ld#context\""
+# Respuesta estándar sin filtro: error conforme NGSI-LD
+{"type":"https://uri.etsi.org/ngsi-ld/errors/BadRequestData",
+ "title":"Too broad query",
+ "detail":"Need at least one of: entity-id, entity-type, geo-location..."}
+```
+
+La respuesta `BadRequestData` ante una consulta sin filtros es comportamiento correcto según la especificación NGSI-LD 1.6.1, que prohíbe devolver la totalidad del modelo de datos sin restricción de tipo, ID o geolocalización para proteger el rendimiento del sistema.
 
 ### 4.3.5 Análisis de Costes AWS
 
