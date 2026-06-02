@@ -283,7 +283,7 @@ resources:
   limits:   { memory: 1Gi,   cpu: 500m }
 ```
 
-Kong actúa como PEP/API Gateway, interceptando todas las peticiones y verificando la validez del token Bearer antes de enrutar la solicitud al Context Broker.
+El ingress de Orion-LD está **deshabilitado** en producción: Orion solo es accesible internamente en `fiware-orion.provider.svc.cluster.local:1026`. Kong actúa como único punto de entrada público, interceptando todas las peticiones y verificando la validez del token Bearer antes de enrutar la solicitud al Context Broker. Ver §4.2.6 para la descripción completa de Kong como PEP.
 
 **Bases de datos (ola 0)**
 
@@ -308,7 +308,73 @@ fiware-orion-mongo-5ffd58659c-vpmgs   1/1     Running   0
 
 Los dos nodos del clúster (`ip-10-0-2-175` en `eu-west-1b` e `ip-10-0-3-209` en `eu-west-1c`) ejecutan EKS 1.34.8 sobre Amazon Linux 2023 con containerd 2.2.3. El reparto entre zonas de disponibilidad garantiza continuidad del servicio ante la interrupción de una zona completa.
 
-### 4.2.4 Gestión de Secretos (External Secrets Operator)
+### 4.2.4 Kong API Gateway como Policy Enforcement Point
+
+Kong (v3.x, `bitnami/kong` chart v15.4) actúa como *Policy Enforcement Point* (PEP) entre el exterior y Orion-LD, materializando la arquitectura de referencia XACML del DSBA TCF en la que ninguna petición de datos alcanza el Context Broker sin pasar por un control de autorización.
+
+**Modo DB-less y configuración declarativa**
+
+Kong se despliega en modo DB-less, sin dependencia de PostgreSQL, reduciendo el consumo de recursos a ~256 MB de RAM. La configuración se expresa en formato YAML declarativo almacenado en un ConfigMap de Kubernetes, lo que mantiene la configuración de Kong bajo control de versiones Git al igual que el resto del sistema:
+
+```yaml
+# gitops/values/provider/kong.yaml (extracto)
+database: "off"
+kong:
+  declarativeConfig: |
+    _format_version: "3.0"
+    services:
+      - name: orion-ld-service
+        url: http://fiware-orion.provider.svc.cluster.local:1026
+        routes:
+          - name: ngsi-ld-api
+            paths: [/ngsi-ld, /version]
+            strip_path: false
+    consumers:
+      - username: fiware-dataspace-provider
+        jwt_secrets:
+          - algorithm: HS256
+            key: fiware-dataspace-provider-app
+            secret: <inyectado desde Secrets Manager>
+    plugins:
+      - name: jwt
+        service: orion-ld-service
+        config:
+          key_claim_name: iss
+          claims_to_verify: [exp]
+```
+
+**Flujo de autorización con Kong**
+
+La integración Kong ↔ Keyrock implementa el patrón PEP-PDP de XACML en dos pasos:
+
+1. El Consumidor presenta un *Access Token* JWT emitido por Keyrock (Authorization Server) en el header `Authorization: Bearer <token>`.
+2. Kong valida localmente la firma del JWT usando el secreto del consumer registrado (HS256) y verifica la expiración del token.
+3. Si la validación es exitosa, Kong reenvía la petición a `fiware-orion.provider.svc.cluster.local:1026` con el path original conservado.
+4. Si el JWT es inválido o ausente, Kong devuelve `401 Unauthorized` sin contactar a Orion-LD.
+
+Este diseño mantiene la decisión de autorización distribuida: Keyrock emite el token con los claims de acceso (PDP); Kong los verifica en el perímetro (PEP). Las peticiones rechazadas nunca alcanzan el Context Broker, lo que protege los datos de contexto incluso ante vulnerabilidades de Orion-LD.
+
+**Topología de red resultante**
+
+```
+Internet → NLB → ingress-nginx → Kong (orion.lab-jdmonsalvel.com) → Orion-LD (interno)
+                              ↑
+                         JWT validation
+                      (sig + exp claim)
+```
+
+El Sync Wave "3" de Kong (posterior a Orion en wave "2") garantiza que el Context Broker está operativo antes de que Kong configure las rutas hacia él.
+
+**ADR-006: Kong en modo DB-less**
+
+| Campo | Detalle |
+|-------|---------|
+| **Estado** | Aceptado |
+| **Decisión** | Kong se despliega en modo DB-less (sin PostgreSQL). |
+| **Justificación** | El modo DB-less elimina el componente PostgreSQL (~512 MB RAM adicional), permitiendo que Kong opere en el margen de recursos disponibles en el entorno de laboratorio (2× t3a.large). La configuración estática es suficiente para el caso de uso del TFM. |
+| **Consecuencias** | Los cambios en la configuración de Kong requieren actualizar el ConfigMap y reiniciar el pod (no hay Admin API dinámica). En producción se recomienda modo DB con PostgreSQL para soporte de plugins dinámicos. |
+
+### 4.2.5 Gestión de Secretos (External Secrets Operator)
 
 ESO sincroniza los secretos desde AWS Secrets Manager al clúster en tres capas: el almacén canónico en AWS Secrets Manager (creado por Terraform con contraseñas aleatorias, nunca accesibles desde Git), el `ClusterSecretStore` (CRD que define la conexión al backend AWS mediante IRSA) y los objetos `ExternalSecret` por *namespace* (definen qué secreto de AWS proyectar como Secret nativo de Kubernetes):
 
@@ -349,7 +415,7 @@ ClusterSecretStore/aws-secrets-manager   47h   Valid   ReadWrite   True
 
 Los cuatro `ExternalSecret` en tres *namespaces* distintos sincronizan automáticamente cada hora, garantizando que la rotación de credenciales en AWS Secrets Manager se propague al clúster sin intervención manual.
 
-### 4.2.5 Pipelines CI/CD
+### 4.2.6 Pipelines CI/CD
 
 Se implementan cuatro workflows de GitHub Actions:
 
