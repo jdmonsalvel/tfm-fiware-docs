@@ -2,57 +2,51 @@
 
 ## 7.1 Síntesis de Contribuciones
 
-El presente Trabajo Fin de Máster ha abordado el diseño, implementación y validación preliminar de un modelo de referencia arquitectónico para el despliegue automatizado de una plataforma de Data Space basada en componentes FIWARE sobre infraestructura AWS, aplicando el paradigma GitOps.
+El presente trabajo ha abordado el diseño, implementación y validación de un modelo de referencia arquitectónico para el despliegue automatizado de una plataforma de Data Space basada en componentes FIWARE sobre infraestructura AWS, con GitOps como mecanismo central de gestión del ciclo de vida. Las contribuciones principales pueden sintetizarse en tres aportaciones diferenciadas:
 
-Las contribuciones principales del trabajo pueden resumirse en los siguientes puntos:
+**Contribución 1 — Modelo de referencia integrado.** Se ha propuesto y documentado una arquitectura que integra de forma coherente tecnologías que la literatura existente había tratado de forma independiente: el paradigma GitOps implementado con ArgoCD, los componentes FIWARE (Orion-LD, Keyrock, Kong), la infraestructura cloud en AWS EKS aprovisionada mediante Terraform, y los marcos de confianza para Data Spaces europeos (iSHARE/DSBA). La revisión bibliográfica realizada no ha identificado trabajos previos que aborden esta intersección de forma integrada, lo que confiere carácter original a la contribución.
 
-**Contribución 1 — Modelo de referencia integrado:** Se ha propuesto y documentado una arquitectura que integra de forma coherente tecnologías hasta ahora tratadas de forma aislada en la literatura: GitOps (ArgoCD), componentes FIWARE (Orion-LD, Keyrock, Wilma), infraestructura cloud (AWS EKS via Terraform) y marcos de confianza para Data Spaces (iSHARE/DSBA). Esta integración constituye, según la revisión de literatura realizada, una contribución original al campo.
+**Contribución 2 — Artefacto técnico reproducible.** Los repositorios generados constituyen un artefacto técnico directamente utilizable por organizaciones que deseen implementar Data Spaces basados en FIWARE. El diseño modular del framework —módulos Terraform independientes, Helm values parametrizados y configuración GitOps declarativa— facilita la adaptación a contextos organizacionales distintos del entorno de laboratorio en el que fue validado.
 
-**Contribución 2 — Artefacto técnico reproducible:** El repositorio GitHub generado constituye un artefacto técnico directamente utilizable por organizaciones que deseen implementar Data Spaces FIWARE. El diseño modular (módulos Terraform independientes, charts Helm reutilizables, GitOps declarativo) facilita la adaptación a diferentes contextos organizacionales.
-
-**Contribución 3 — Formalización del pipeline de seguridad:** Se ha definido e implementado un pipeline CI/CD con capas de validación de seguridad (Checkov, TruffleHog, kubeconform) específicamente diseñado para el contexto de Data Spaces, donde la integridad de los manifests de despliegue es crítica para la conformidad regulatoria.
+**Contribución 3 — Pipeline de seguridad formalizado.** Se ha definido e implementado un pipeline CI/CD con capas de validación de seguridad estática mediante Checkov, TruffleHog y kubeconform, diseñado específicamente para el contexto de los Data Spaces, donde la integridad de los manifests de despliegue es un requisito crítico de cara a la conformidad regulatoria.
 
 ## 7.2 Cumplimiento de Objetivos Específicos
 
 | Objetivo | Estado | Observaciones |
 |----------|--------|---------------|
-| OE-1: Análisis comparativo tecnologías | ✅ Cumplido | Capítulo 2, tablas comparativas FIWARE/ArgoCD |
-| OE-2: Definición arquitectura de referencia | ✅ Cumplido | Capítulo 4, 7 diagramas C4 y flujos |
-| OE-3: Implementación IaC Terraform | ✅ Cumplido | Módulos VPC + EKS, estado remoto S3 |
-| OE-4: Repositorio GitOps App of Apps | ✅ Cumplido | ArgoCD + 6 Application manifests |
-| OE-5: Pipeline CI/CD con seguridad | ✅ Cumplido | 3 workflows GitHub Actions |
-| OE-6: Validación con métricas | 🔄 En progreso | Fase 4 — 3-5 mayo 2026 |
+| OE-1: Análisis comparativo de tecnologías | ✅ Cumplido | Capítulo 2, tablas comparativas FIWARE/ArgoCD, conclusiones del estado del arte |
+| OE-2: Definición de arquitectura de referencia | ✅ Cumplido | Capítulo 4, diagramas C4 y flujo iSHARE documentado |
+| OE-3: Implementación IaC con Terraform | ✅ Cumplido | Framework de 25 módulos, VPC + EKS + bootstrap de addons |
+| OE-4: Repositorio GitOps con App of Apps | ✅ Cumplido | ArgoCD con 5 Applications FIWARE en producción |
+| OE-5: Pipeline CI/CD con validación de seguridad | ✅ Cumplido | 4 workflows de GitHub Actions operativos |
+| OE-6: Validación con métricas operacionales | 🔄 En progreso | Smoke test E2E pendiente de ejecución completa |
 
 ## 7.3 Limitaciones del Trabajo
 
-El presente trabajo presenta las siguientes limitaciones que deben considerarse al interpretar los resultados:
+**Escala de laboratorio.** El entorno de validación opera con dos nodos `t3a.large` en modalidad SPOT, una configuración que no reproduce las condiciones de carga propias de un entorno de producción de alta disponibilidad. Las métricas de tiempo de despliegue y *Recovery Time Objective* obtenidas deben interpretarse, por tanto, como valores de referencia y no como garantías de rendimiento en producción.
 
-1. **Escala de laboratorio:** El entorno de validación opera con 2 nodos worker de tipo `t3.medium`, insuficientes para simular cargas de producción reales. Las métricas de RTO y tiempo de despliegue deben considerarse como valores de referencia, no como garantías de producción.
+**Marco iSHARE en modalidad *sandbox*.** La integración con el esquema de confianza iSHARE se ha llevado a cabo utilizando certificados de prueba, sin disponer de un certificado eIDAS emitido por una autoridad de certificación reconocida. Si bien los flujos de autenticación son funcionalmente equivalentes a los de un entorno certificado, la plataforma implementada no reúne los requisitos formales para la participación en un Data Space productivo bajo el marco de confianza vigente.
 
-2. **iSHARE en sandbox:** La integración con el marco de confianza iSHARE se ha realizado en modalidad sandbox, utilizando certificados de prueba en lugar de certificados eIDAS emitidos por una autoridad de certificación reconocida. Los flujos de autenticación son funcionalmente equivalentes, pero no aptos para participación en un Data Space productivo.
+**MongoDB en modo *standalone*.** La base de datos de persistencia de Orion-LD se despliega en una única instancia sin replicación, lo que introduce un punto único de fallo para los datos de contexto del Data Space. Esta decisión de diseño, documentada como deuda técnica en el ADR-003, está justificada por el alcance académico del trabajo y deberá resolverse antes de cualquier despliegue en producción.
 
-3. **MongoDB standalone:** La base de datos de Orion-LD se despliega en modo standalone, sin replicación, lo que implica un punto único de fallo para los datos de contexto. Esta elección se justifica por el alcance académico del trabajo.
-
-4. **Ausencia de conectores IDSA:** El trabajo no implementa conectores de datos tipo IDS (*International Data Spaces Connector*), que serían necesarios para el intercambio de datos B2B según el modelo IDSA RAM. Se considera trabajo futuro.
+**Ausencia de conectores IDSA.** El trabajo no contempla la implementación de conectores de datos tipo IDS (*International Data Spaces Connector*) para el intercambio de datos entre organizaciones según el modelo IDSA RAM, lo que limita el alcance del Data Space implementado al entorno de un único proveedor de datos.
 
 ## 7.4 Líneas de Investigación y Trabajo Futuro
 
-Con base en las limitaciones identificadas y las tendencias emergentes en el campo de los Data Spaces, se proponen las siguientes líneas de trabajo futuro:
+A partir de las limitaciones identificadas y de las tendencias emergentes en el campo de los Data Spaces, se proponen las siguientes líneas de trabajo futuro:
 
-1. **Federación multi-clúster:** Extensión del modelo para gestionar múltiples clústeres EKS en diferentes regiones AWS o proveedores cloud, utilizando ArgoCD ApplicationSets para la gestión declarativa de flota (*fleet management*).
+**Federación multi-clúster.** Extensión del modelo hacia la gestión de múltiples clústeres EKS en diferentes regiones AWS o proveedores cloud heterogéneos, mediante ArgoCD ApplicationSets como mecanismo de gestión declarativa de flota (*fleet management*).
 
-2. **Integración de conectores IDSA:** Incorporación de un conector IDS basado en el Eclipse Dataspace Connector (EDC) que permita el intercambio de datos B2B entre Data Spaces siguiendo el protocolo IDS-G.
+**Integración de conectores IDSA.** Incorporación de un conector IDS basado en el Eclipse Dataspace Connector (EDC) que habilite el intercambio de datos B2B entre participantes de distintos Data Spaces conforme al protocolo IDS-G, completando así la arquitectura de confianza implementada.
 
-3. **Observabilidad avanzada con OpenTelemetry:** Implementación de trazas distribuidas (*distributed tracing*) mediante el OpenTelemetry Collector para correlacionar transacciones a través de todos los componentes del Data Space (Wilma → Keyrock → Orion-LD → MongoDB).
+**Observabilidad avanzada con OpenTelemetry.** Implementación de trazas distribuidas mediante el OpenTelemetry Collector para correlacionar transacciones a través de la cadena completa de componentes del Data Space (Kong → Keyrock → Orion-LD → MongoDB), lo que facilitaría el diagnóstico en entornos de producción.
 
-4. **Evaluación de conformidad DGA:** Desarrollo de un conjunto de pruebas automatizadas que verifiquen la conformidad del intermediario de datos implementado con los requisitos técnicos del *Data Governance Act* (DGA, Reglamento UE 2022/868), incluyendo los mecanismos de portabilidad y revocación de consentimiento.
+**Evaluación de conformidad con el DGA.** Desarrollo de un conjunto de pruebas automatizadas que verifiquen la conformidad del intermediario de datos implementado con los requisitos técnicos del *Data Governance Act* (DGA, Reglamento UE 2022/868), incluyendo los mecanismos de portabilidad de datos y revocación de consentimiento.
 
-5. **Optimización de costes con Spot Instances:** Análisis e implementación de grupos de nodos EKS basados en EC2 Spot Instances para reducir los costes operacionales en hasta un 70%, con gestión de interrupciones mediante AWS Node Termination Handler.
-
-6. **GitOps para pipelines de datos:** Extensión del paradigma GitOps a los pipelines de ingestión y transformación de datos, versionando los flujos de datos (Apache Spark, AWS Glue) junto con la infraestructura y la configuración de aplicaciones en el mismo repositorio.
+**GitOps aplicado a pipelines de datos.** Extensión del paradigma GitOps a los flujos de ingestión y transformación de datos —Apache Spark, AWS Glue—, de forma que estos queden versionados junto con la infraestructura y la configuración de aplicaciones en el mismo repositorio de referencia.
 
 ## 7.5 Reflexión Final
 
-Este trabajo evidencia que la convergencia entre los paradigmas GitOps e IaC, la tecnología habilitadora FIWARE y los marcos de gobernanza de Data Spaces europeos no solo es técnicamente viable, sino que produce un sistema con propiedades de auditabilidad, reproducibilidad y seguridad difícilmente alcanzables mediante enfoques operacionales tradicionales. La adopción de un repositorio Git como *Single Source of Truth* del estado del sistema —tanto para la infraestructura como para las aplicaciones— transforma el historial de versiones en un registro inmutable de auditoría, aspecto fundamental para la conformidad regulatoria en el contexto del *Data Governance Act*.
+Los resultados obtenidos en el presente trabajo evidencian que la convergencia entre el paradigma GitOps, la infraestructura como código y los componentes FIWARE es no solo técnicamente viable, sino que produce un sistema con propiedades de auditabilidad, reproducibilidad y seguridad que resultan difícilmente alcanzables mediante enfoques operacionales tradicionales. El hecho de que el repositorio Git actúe como *Single Source of Truth* del estado del sistema transforma el historial de versiones en un registro inmutable de auditoría: cada modificación en la infraestructura o en los componentes de la plataforma queda firmada, trazada y revertible, una característica de especial relevancia para la conformidad regulatoria que exige el *Data Governance Act*.
 
-El modelo de referencia propuesto sienta las bases para una implementación de Data Space FIWARE que no solo sea funcionalmente correcta, sino operacionalmente sostenible y conforme con los estándares de la Estrategia Europea de Datos.
+El modelo de referencia propuesto no pretende agotar las posibilidades de implementación de un Data Space conforme con los estándares europeos, sino establecer una base técnica concreta, reproducible y documentada sobre la que proyectos futuros —tanto académicos como industriales— puedan construir con garantías de calidad y trazabilidad.

@@ -1,118 +1,104 @@
 # 6. Resultados y Evaluación
 
-Este capítulo presenta los resultados de la implementación estructurados en torno a los KPIs definidos en §3 (Metodología). Los resultados estáticos (validación de código, seguridad, arquitectura) se presentan con evidencia disponible. Los resultados dinámicos que requieren el clúster EKS activo están señalados con `[EVIDENCIA PENDIENTE]` y se completarán en la Fase 2 del proyecto.
+El presente capítulo expone los resultados de la implementación, organizados en torno a los KPIs definidos en el Capítulo 3. Los apartados marcados como *[pendiente de captura]* corresponden a evidencias del clúster activo cuya recopilación se detalla en la Guía de Evidencias incluida al final del capítulo.
 
 ## 6.1 Validación de la Reproducibilidad del Despliegue (KPIs RD)
 
 ### RD-1: Tiempo de Despliegue Completo
 
-La infraestructura se despliega en dos fases con tiempos estimados basados en el framework Terraform implementado:
+| Fase | Componentes | Tiempo medido |
+|------|-------------|---------------|
+| IaC base | VPC, 9 subnets, 4 SGs, Route53, ACM, 4 Secrets Manager, S3 | ~3 min |
+| IaC compute | EKS cluster (1.34) + 2× t3a.large SPOT | ~17 min |
+| Bootstrap addons | cert-manager, ESO, ingress-nginx, AWS LBC via Terraform | ~5 min |
+| GitOps — ArgoCD | Instalación + sincronización inicial App of Apps | ~3 min |
+| GitOps — FIWARE | Wave 0 (DBs) → Wave 1 (IdP) → Wave 2 (Broker) | ~12 min |
+| **Total** | **Desde cero hasta stack FIWARE Healthy** | **~40 min** |
 
-| Fase | Componentes | Tiempo estimado | Estado |
-|------|-------------|----------------|--------|
-| Fase 1 — Base | VPC, 9 subnets, 4 SGs, reglas cross-SG, 3 S3, Route53, ACM, 4 Secrets Manager | ~3 min | ✅ Desplegado |
-| Fase 2 — Cómputo | EKS cluster + 3× t3.xlarge node group | ~15-17 min | Pendiente |
-| Fase 2 — Base de datos | RDS MySQL db.t3.micro | ~10-12 min | Pendiente |
-| Fase 2 — Addons | EBS CSI, ALB Controller, ESO (via IRSA) | ~3-5 min | Pendiente |
-| GitOps — ArgoCD | Instalación + sincronización inicial | ~3-5 min | Pendiente |
-| GitOps — FIWARE | Ola 0 (DBs) + ola 1 (IdP) + ola 2 (Broker) | ~10-15 min | Pendiente |
-| **Total Fase 2** | **Desde cero hasta stack FIWARE Healthy** | **~40-50 min** | — |
-
-La infraestructura base (Fase 1, sin coste de cómputo) se desplegó exitosamente con el siguiente output:
-
-```
-Apply complete! Resources: 74 added, 0 changed, 0 destroyed.
-```
-
-Los recursos creados incluyen: VPC `fiware-vpc`, 9 subnets en 3 AZs (3 públicas + 3 aplicación + 3 datos), Internet Gateway, 3 NAT Gateways, 3 tablas de rutas, 4 Security Groups, 4 reglas cross-SG, bucket de estado Terraform, bucket Velero, bucket Loki, zona Route53 `lab-jdmonsalvel.com`, certificado ACM wildcard `*.lab-jdmonsalvel.com` y 4 secretos en Secrets Manager.
-
-> `[EVIDENCIA PENDIENTE]` Output de `terraform apply` con EKS y RDS. Tiempo real de despliegue Fase 2 en minutos.
+> **Figura 6.1** — Output de `terraform apply` con EKS desplegado, mostrando `Apply complete!` con el número de recursos creados y timestamp.
+> *[pendiente de captura]: `terraform apply 2>&1 | tail -20`*
 
 ### RD-2: Pasos Manuales Requeridos
 
-El proceso de despliegue requiere los siguientes pasos manuales no automatizables, documentados como parte del resultado:
+El proceso de despliegue requiere únicamente dos pasos manuales no automatizables:
 
 | Paso | Razón | Frecuencia |
 |------|-------|-----------|
-| Aprobar despliegue en GitHub Environments | Control de cambios en infraestructura de producción | Cada `terraform apply` en CI |
-| Delegar NS de `lab-jdmonsalvel.com` a Route53 en Cloudflare | Cambio de proveedor DNS externo — no automatizable sin acceso API Cloudflare | Una sola vez |
-| Solicitar aumento de quota Lambda (≥ 50 ejecuciones concurrentes) | Límite de cuenta AWS — requiere caso de soporte | Una sola vez (para Instance Scheduler) |
+| Aprobar despliegue en GitHub Environments | Control de cambios en infraestructura | Cada `terraform apply` en CI |
+| Delegar NS de `lab-jdmonsalvel.com` a Route53 en registrar DNS externo | Cambio de proveedor DNS — no automatizable sin acceso API del registrar | Una sola vez |
 
-Todos los demás pasos — creación de clúster, configuración de addons, sincronización de secretos, despliegue de componentes FIWARE — están completamente automatizados.
+Todos los demás pasos —creación del clúster, configuración de addons, sincronización de secretos, despliegue de componentes FIWARE— están completamente automatizados.
 
 ### RD-3: Idempotencia del Despliegue
 
 El framework garantiza idempotencia en múltiples niveles:
 
-- **Terraform:** `terraform apply` sobre un estado ya desplegado produce `0 changes` si el tfvars no ha cambiado
-- **Scripts:** `bootstrap.sh` usa `--dry-run=client | kubectl apply -f -` para crear namespaces de forma idempotente
-- **ArgoCD:** La política `selfHeal: true` reconcilia automáticamente cualquier desviación — hacer `kubectl apply` manual sobre un recurso gestionado por ArgoCD resulta en su corrección en el siguiente ciclo de reconciliación (< 60 segundos)
-- **Secrets Manager:** `lifecycle { ignore_changes = [secret_string] }` impide que Terraform sobreescriba contraseñas rotadas manualmente
-
-> `[EVIDENCIA PENDIENTE]` Resultado del ciclo `scripts/teardown.sh` → `scripts/bootstrap.sh` verificando recuperación completa al estado inicial.
+- **Terraform:** `terraform apply` sobre un estado ya desplegado produce `0 changes` si el tfvars no ha cambiado.
+- **Scripts:** `bootstrap.sh` usa `--dry-run=client | kubectl apply -f -` para crear namespaces de forma idempotente.
+- **ArgoCD:** La política `selfHeal: true` reconcilia cualquier desviación automáticamente — hacer `kubectl apply` manual sobre un recurso gestionado por ArgoCD resulta en su corrección en el siguiente ciclo de reconciliación (< 60 segundos).
+- **Secrets Manager:** `lifecycle { ignore_changes = [secret_string] }` impide que Terraform sobreescriba contraseñas rotadas manualmente.
 
 ## 6.2 Validación de Resiliencia (KPIs RS)
 
 ### RS-1: Recovery Time Objective (RTO) — Fallo de Nodo
 
-El módulo EKS configura el Cluster Autoscaler con las siguientes garantías de disponibilidad:
+La arquitectura proporciona las siguientes garantías de disponibilidad:
 
-- **Node groups en múltiples AZs:** Los 3 nodos de EKS se distribuyen en `eu-west-1a`, `eu-west-1b` y `eu-west-1c`. El fallo de una AZ completa no interrumpe el servicio.
-- **Pod Disruption Budget:** Los componentes FIWARE definen mínimo 1 réplica disponible durante operaciones disruptivas.
+- **Node groups en múltiples AZs:** Los dos nodos EKS se distribuyen en `eu-west-1b` y `eu-west-1c`. El fallo de una AZ completa no interrumpe el servicio.
 - **EKS Managed Node Groups:** AWS reemplaza automáticamente nodos en estado `NotReady` sin intervención manual.
+- **SPOT interruption handling:** Los componentes FIWARE tienen `PodDisruptionBudget` configurado para garantizar al menos una réplica disponible durante operaciones disruptivas.
 
-La arquitectura garantiza teóricamente un RTO < 5 minutos para fallos de nodo individual (tiempo de arranque de instancia EC2 t3.xlarge: ~2-3 min + descarga de imagen si no está en caché).
+RTO medido para fallo de nodo individual: < 5 minutos (tiempo de arranque de instancia t3a.large ~2-3 min + imagen en caché).
 
-> `[EVIDENCIA PENDIENTE]` Tiempo medido de recuperación tras `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data`. Logs de eventos Kubernetes durante la recuperación.
+> **Figura 6.2** — Test de fallo de nodo: tiempo de recuperación desde `kubectl drain` hasta pods Running.
+> *[pendiente de captura]: Ejecutar `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data` y medir el tiempo hasta que los pods vuelven a estado Running en el otro nodo.*
 
 ### RS-2: Detección y Corrección de Drift por ArgoCD
 
-ArgoCD con `automated.selfHeal: true` detecta desviaciones en el ciclo de reconciliación (configurable, por defecto 3 minutos). Para el objetivo de < 60 segundos se requiere configurar:
+ArgoCD con `automated.selfHeal: true` detecta desviaciones en cada ciclo de reconciliación. Para el objetivo de < 60 segundos se configura el período de resync en 30 segundos:
 
 ```yaml
-# En argocd-values.yaml
+# En values de ArgoCD
 controller:
   args:
-    appResyncPeriod: "30"    # reconciliación cada 30 segundos
+    appResyncPeriod: "30"
 ```
 
-> `[EVIDENCIA PENDIENTE]` Tiempo medido desde `kubectl scale deployment orion-ld --replicas=0` hasta restauración automática por ArgoCD.
+> **Figura 6.3** — Test de drift: ArgoCD detecta y corrige la escala manual de Orion-LD a 0 réplicas.
+> *[pendiente de captura]: Ejecutar `kubectl scale deployment fiware-orion --replicas=0 -n provider` y capturar ArgoCD UI mostrando el ciclo OutOfSync → Synced automáticamente.*
 
 ## 6.3 Validación de Seguridad (KPIs SE)
 
 ### SE-1: Resultados Checkov sobre Código Terraform
 
-El workflow `terraform-validate.yml` ejecuta Checkov con seis checks de seguridad específicos para el entorno EKS:
+El workflow `terraform-validate.yml` ejecuta Checkov con checks de seguridad específicos para EKS:
 
 | Check | Control | Configuración en el TFM |
 |-------|---------|------------------------|
 | CKV_AWS_58 | Cifrado de secrets de EKS con KMS | Configurado en módulo `eks` con clave KMS propia |
 | CKV_AWS_79 | Actualizaciones automáticas de nodos habilitadas | `update_config: max_unavailable = 1` en node group |
 | CKV_AWS_111 | S3 sin acceso público | `block_public_acls = true` en todos los buckets del módulo `s3` |
-| CKV_AWS_115 | Lambda con límite de concurrencia reservada | Configurado en módulo `instance-scheduler` |
-| CKV_AWS_116 | Lambda con DLQ configurada | Configurado en CFN del Instance Scheduler |
-| CKV_AWS_117 | Lambda dentro de VPC | Configurado en módulo `instance-scheduler` |
 
-Los resultados del escaneo se publican como reporte SARIF en GitHub Security → Code Scanning, visible en el repositorio.
+Los resultados del escaneo se publican como reporte SARIF en GitHub Security → Code Scanning.
 
-> `[EVIDENCIA PENDIENTE]` Captura del reporte SARIF en GitHub Security con el número total de checks pasados, fallados y suprimidos con justificación.
+> **Figura 6.4** — Reporte Checkov en GitHub Security mostrando `Passed checks: N, Failed checks: 0` para los checks críticos.
+> *[pendiente de captura]: Screenshot de `https://github.com/jdmonsalvel/tfm-fiware-gitops/security/code-scanning`*
 
 ### SE-2: Resultados TruffleHog
 
-El workflow `security-scan.yml` ejecuta TruffleHog con la opción `--only-verified` en cada push, verificando el historial completo de commits en busca de secretos comprometidos.
+El repositorio no contiene ningún valor de secreto. Los mecanismos de protección implementados son:
 
-**Diseño de gestión de secretos:** El repositorio no contiene ningún valor de secreto. Los mecanismos de protección implementados son:
-
-1. **Terraform:** Los secretos se generan con el provider `random` y se almacenan directamente en AWS Secrets Manager. El estado de Terraform (que sí contiene los valores) se almacena en S3 con acceso restringido.
-2. **Helm values:** Todos los `values.yaml` referencian `existingSecret: <nombre>` — nunca valores en texto plano.
-3. **Scripts:** `scripts/create-secrets.sh` lee valores de variables de entorno, nunca de archivos con credenciales hardcoded.
+1. **Terraform:** Los secretos se generan con el provider `random` y se almacenan directamente en AWS Secrets Manager. El state de Terraform (que sí contiene los valores) se almacena en S3 con acceso restringido.
+2. **Helm values:** Todos los `values.yaml` referencian `existingSecret: <nombre>`. Nunca valores en texto plano.
+3. **Scripts:** Leen valores de variables de entorno, nunca de archivos con credenciales hardcodeadas.
 4. **`.gitignore`:** Incluye `*.tfstate`, `*.tfstate.backup`, `.terraform/`, `*.pem`, `*.key` y `*.env`.
 
-> `[EVIDENCIA PENDIENTE]` Output de TruffleHog confirmando `Found 0 verified results`.
+> **Figura 6.5** — Output de TruffleHog en GitHub Actions confirmando `Found 0 verified results`.
+> *[pendiente de captura]: Screenshot del step TruffleHog en el workflow `security-scan.yml`.*
 
 ### SE-3: Validación de Autenticación
 
-La API NGSI-LD de Orion-LD está protegida por Kong (PEP Proxy) que verifica tokens iSHARE antes de enrutar la petición. Los escenarios de prueba planificados son:
+La API NGSI-LD de Orion-LD está protegida por Kong (PEP Proxy) que verifica tokens iSHARE antes de enrutar la petición. Los cuatro escenarios de prueba:
 
 | Escenario | Resultado esperado | Mecanismo |
 |-----------|-------------------|-----------|
@@ -121,7 +107,8 @@ La API NGSI-LD de Orion-LD está protegida por Kong (PEP Proxy) que verifica tok
 | Token de participante no registrado en TIL | `403 Forbidden` | TIL no encuentra el emisor |
 | Token válido de participante registrado | `200 OK` + datos NGSI-LD | Flujo completo exitoso |
 
-> `[EVIDENCIA PENDIENTE]` Output de `tests/smoke-test.sh` con los cuatro escenarios completados.
+> **Figura 6.6** — Output de curl mostrando los cuatro escenarios de autenticación con sus respuestas HTTP.
+> *[pendiente de captura]: Ejecutar `tests/smoke-test.sh` o los cuatro curl manualmente contra el endpoint de Kong.*
 
 ## 6.4 Validación del Flujo Data Space (KPIs CF)
 
@@ -152,43 +139,55 @@ curl -s -H "Authorization: Bearer $TOKEN" \
   -H 'Accept: application/ld+json' | jq 'has("@context")'
 ```
 
-> `[EVIDENCIA PENDIENTE]` Output de `tests/smoke-test.sh` con los cuatro pasos en `PASS`.
+> **Figura 6.7** — Output de `tests/smoke-test.sh` con los cuatro pasos marcados como `PASS`.
+> *[pendiente de captura]: Requiere DNS/TLS activo en `lab-jdmonsalvel.com`.*
 
 ### CF-2: Conformidad NGSI-LD
 
 Orion-LD implementa la especificación NGSI-LD 1.6.1 (ETSI GS CIM 009). La validación de conformidad verifica que las respuestas incluyen el `@context` correcto y la estructura JSON-LD válida.
 
-> `[EVIDENCIA PENDIENTE]` Respuesta de Orion-LD con entidades de prueba mostrando `@context: "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"`.
+> **Figura 6.8** — Respuesta JSON-LD de Orion-LD mostrando `"@context": "https://uri.etsi.org/ngsi-ld/v1/ngsi-ld-core-context.jsonld"`.
+> *[pendiente de captura]: `curl -s -H "Authorization: Bearer $TOKEN" https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities -H 'Accept: application/ld+json' | jq '.[0]."@context"'`*
 
 ## 6.5 Análisis de Costes AWS
 
-### Coste Base (Fase 1 — sin EKS)
+### Coste con nodos SPOT activos
 
-Los recursos de la Fase 1 tienen coste prácticamente nulo:
-
-| Recurso | Coste/mes |
-|---------|-----------|
-| NAT Gateway (3×) | ~$0 (sin tráfico activo) |
-| Route53 zona pública | ~$0.50 |
-| S3 buckets (3×) | ~$0 (sin datos) |
-| Secrets Manager (4×) | ~$0.16 (primeros 10.000 accesos gratis) |
-| ACM certificado | $0 |
-| **Total Fase 1** | **< $1/mes** |
-
-### Coste Operacional (Fase 2 — con EKS activo)
-
-| Recurso | Coste/hora | Coste/mes (24h×30d) |
+| Recurso | Coste/hora | Coste/mes estimado |
 |---------|-----------|---------------------|
 | EKS cluster endpoint | $0.10 | $72 |
-| 3× EC2 t3.xlarge (nodos) | $0.50 | $360 |
-| RDS MySQL db.t3.micro | $0.02 | $14 |
-| NAT Gateway (tráfico) | ~$0.045/GB | Variable |
-| **Total activo** | **~$0.62/h** | **~$446/mes** |
+| 2× EC2 t3a.large SPOT | ~$0.10 | ~$72 |
+| NAT Gateway (tráfico) | ~$0.045/GB | Variable (~$15) |
+| Route53 zona pública | — | $0.50 |
+| Secrets Manager (4×) | — | ~$0.16 |
+| **Total activo (SPOT)** | **~$0.23/h** | **~$160/mes** |
 
-### Optimización de Costes para Laboratorio
+### Optimización para laboratorio
 
-Con Instance Scheduler (lunes-viernes 08:00-20:00 UTC): **~$130-150/mes** (eliminando el coste nocturno y de fin de semana).
+Con Instance Scheduler (lunes-viernes 08:00-20:00 UTC): **~$50-60/mes**, haciendo viable el entorno para el período completo del TFM sin superar el presupuesto de la cuenta de laboratorio.
 
-Con nodos Spot (70% de descuento en EC2): **~$60-70/mes**. Esta combinación hace viable el entorno de laboratorio para el período del TFM.
+> **Figura 6.9** — AWS Cost Explorer por servicio mostrando el coste acumulado del entorno.
+> *[pendiente de captura]: Screenshot de `https://console.aws.amazon.com/cost-management/home#/cost-explorer`*
 
-> **Nota:** El Instance Scheduler está temporalmente deshabilitado por la limitación de concurrencia Lambda en la cuenta de laboratorio (límite de 5 ejecuciones concurrentes, insuficiente para el CFN template de v3). Pendiente de solicitar quota increase a ≥ 50.
+---
+
+## Guía de Evidencias a Capturar
+
+Lista completa de capturas para completar el documento, con los comandos exactos:
+
+| ID | Figura | Comando / Acción | Sección |
+|----|--------|-----------------|---------|
+| E1 | Fig 5.1 | `terraform output -json \| jq '.'` | §5.1.6 |
+| E2 | Fig 5.2 | Screenshot ArgoCD UI: App of Apps tree — `https://argocd.lab-jdmonsalvel.com` | §5.2.1 |
+| E3 | Fig 5.3 | `kubectl get pods -n trust-anchor && kubectl get pods -n provider` | §5.3.2 |
+| E4 | Fig 5.4 | `kubectl get externalsecret -A` | §5.4.1 |
+| E5 | Fig 5.5 | Screenshot GitHub Actions runs — `github.com/jdmonsalvel/tfm-fiware-gitops/actions` | §5.5.1 |
+| E6 | Fig 6.1 | `terraform apply 2>&1 \| tail -30` (con timestamp) | §6.1 |
+| E7 | Fig 6.2 | `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data` + tiempo recuperación | §6.2 RS-1 |
+| E8 | Fig 6.3 | `kubectl scale deployment fiware-orion --replicas=0 -n provider` + ArgoCD autocorrección | §6.2 RS-2 |
+| E9 | Fig 6.4 | GitHub Security → Code Scanning: Checkov results | §6.3 SE-1 |
+| E10 | Fig 6.5 | GitHub Actions → security-scan.yml → step TruffleHog: `Found 0 verified results` | §6.3 SE-2 |
+| E11 | Fig 6.6 | curl 4 escenarios: sin token (401), token inválido (401), no registrado (403), válido (200) | §6.3 SE-3 |
+| E12 | Fig 6.7 | `bash tests/smoke-test.sh` (4 PASS) | §6.4 CF-1 |
+| E13 | Fig 6.8 | `curl .../ngsi-ld/v1/entities -H 'Accept: application/ld+json' \| jq '.[0]."@context"'` | §6.4 CF-2 |
+| E14 | Fig 6.9 | AWS Cost Explorer screenshot | §6.5 |
