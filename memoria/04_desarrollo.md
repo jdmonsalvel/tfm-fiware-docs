@@ -282,6 +282,25 @@ spec:
 
 La política `automated.selfHeal: true` garantiza que cualquier desviación entre el estado del clúster y el repositorio Git sea corregida automáticamente, materializando el principio de reconciliación continua de GitOps.
 
+**Acceso a la interfaz de ArgoCD**
+
+ArgoCD se expone mediante un `Ingress` de ingress-nginx con terminación TLS gestionada por cert-manager (certificado Let's Encrypt). La UI es accesible en:
+
+```
+URL:      https://argocd.lab-jdmonsalvel.com
+Usuario:  admin
+Password: gestionada en el cluster (kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+```
+
+En entornos donde el Ingress no esté disponible (acceso directo al clúster sin DNS externo), ArgoCD puede accederse mediante port-forward:
+
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# Acceder en: https://localhost:8080
+```
+
+> **Nota de configuración:** ArgoCD se ejecuta en modo `server.insecure: true` (configurado en el ConfigMap `argocd-cmd-params-cm`), lo que significa que el servidor HTTP interno no cifra el tráfico. El cifrado TLS lo gestiona exclusivamente ingress-nginx en el perímetro del clúster, siguiendo el patrón estándar de terminación TLS en el ingress.
+
 > **Figura 4.6** — ArgoCD UI mostrando el App of Apps con todas las Applications en estado Synced/Healthy.
 > *Fuente: Elaboración propia. URL: `https://argocd.lab-jdmonsalvel.com`*
 
