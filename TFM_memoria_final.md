@@ -518,6 +518,10 @@ Ejecución de pruebas funcionales E2E del ciclo completo del Data Space; medici�
 
 ## 3.4 Criterios de Evaluación y KPIs
 
+En el paradigma Design Science Research, la evaluación del artefacto es un componente metodológico de primer orden: a diferencia de la investigación descriptiva, donde los resultados se analizan cualitativamente, el DSR requiere operacionalizar los criterios de éxito antes de comenzar la implementación, de modo que la valoración de la contribución sea objetiva y reproducible (Hevner et al., 2004). En el presente trabajo, este principio se materializa en un conjunto de diez indicadores clave de rendimiento (KPIs) definidos a priori, organizados en cuatro dimensiones que cubren los aspectos críticos del modelo propuesto: la reproducibilidad del despliegue, la resiliencia ante fallos, la postura de seguridad y la conformidad con los estándares de Data Spaces europeos.
+
+Cada KPI incluye una descripción operacional unívoca y un umbral de aceptación cuantitativo que actúa como criterio de éxito. Los resultados obtenidos frente a estos KPIs se presentan en §4.3, donde se contrastan las mediciones del sistema en producción contra los umbrales aquí definidos. Este diseño de evaluación responde directamente al objetivo específico OE-6 y permite al evaluador del trabajo verificar de forma independiente el cumplimiento de los objetivos declarados.
+
 La validación del modelo propuesto se realiza mediante indicadores clave de rendimiento (KPIs) organizados en cuatro dimensiones:
 
 **Dimensión 1 — Reproducibilidad**
@@ -571,6 +575,10 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 *Fuente:* Elaboración propia.
 
 ## 3.5 Herramientas y Tecnologías
+
+La consecución de los objetivos del trabajo requiere la combinación de herramientas de distintos dominios tecnológicos que actúan de forma coordinada. La selección de cada herramienta responde a criterios de madurez industrial, conformidad con los estándares europeos de Data Spaces, disponibilidad de Helm charts mantenidos para Kubernetes y compatibilidad con los principios de IaC y GitOps adoptados. Las alternativas consideradas y los motivos de exclusión se analizan en detalle en §2.2; aquí se presenta el inventario final con la versión empleada y el rol que cada herramienta desempeña en las fases del proyecto descritas en §3.3.2.
+
+Las herramientas se agrupan en tres bloques funcionales que se corresponden con las tres capas del sistema. El primer bloque cubre la **infraestructura cloud**: Terraform aprovisiona los recursos AWS (VPC, EKS, IAM, Secrets Manager) de forma declarativa y reproducible, con el estado almacenado de forma remota en S3. El segundo bloque cubre la **capa GitOps y orquestación**: Kubernetes (EKS 1.34) proporciona la plataforma de contenedores; ArgoCD actúa como operador GitOps con el patrón App of Apps; y Helm empaqueta y parametriza las aplicaciones FIWARE. El tercer bloque cubre los **componentes del Data Space**: Orion-LD como Context Broker NGSI-LD, Keyrock como gestor de identidades e implementación del protocolo iSHARE, Kong como Policy Enforcement Point, y External Secrets Operator para la proyección de secretos desde AWS Secrets Manager. Transversalmente, los pipelines de GitHub Actions integran la validación de seguridad con Checkov y TruffleHog en cada ciclo de integración continua.
 
 **Tabla 3.5.**
 *Herramientas y tecnologías utilizadas en el proyecto con justificación de selección*
