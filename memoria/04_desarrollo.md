@@ -68,6 +68,9 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 
 **ADR-001: Selección de ArgoCD sobre FluxCD**
 
+**Tabla 4.1.**
+*ADR-001: Decisión de selección de ArgoCD sobre FluxCD*
+
 | Campo | Detalle |
 |-------|---------|
 | **Estado** | Aceptado |
@@ -76,7 +79,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | ArgoCD ofrece interfaz gráfica para supervisión visual del estado de sincronización, soporte nativo para App of Apps sin dependencias adicionales, y mayor adopción empresarial que incrementa la transferibilidad del modelo. |
 | **Consecuencias** | Mayor consumo de memoria (~512 MB adicionales respecto a Flux), asumible en el entorno de laboratorio. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-002: Región AWS eu-west-1**
+
+**Tabla 4.2.**
+*ADR-002: Decisión de región AWS eu-west-1*
 
 | Campo | Detalle |
 |-------|---------|
@@ -85,7 +93,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | Conformidad RGPD, residencia de datos en la UE, disponibilidad de todos los servicios AWS requeridos y menor latencia hacia nodos del ecosistema Gaia-X. |
 | **Consecuencias** | No se identifican consecuencias negativas para el alcance del trabajo. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-003: MongoDB en modo *standalone***
+
+**Tabla 4.3.**
+*ADR-003: Decisión de despliegue de MongoDB en modo standalone*
 
 | Campo | Detalle |
 |-------|---------|
@@ -94,7 +107,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | El modo *replica set* incrementaría los costes en ~5 USD/día sin aportar valor adicional a los objetivos definidos. |
 | **Deuda técnica** | En producción se requiere modo *replica set* con 3 miembros para HA y consistencia fuerte. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-004: Instancias t3a.large en modalidad SPOT**
+
+**Tabla 4.4.**
+*ADR-004: Decisión de uso de instancias t3a.large en modalidad SPOT*
 
 | Campo | Detalle |
 |-------|---------|
@@ -103,7 +121,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | Tamaño mínimo viable para el stack FIWARE completo (~8-10 GB RAM). Las instancias SPOT reducen el coste en ~70% respecto a On-Demand. VPC CNI Prefix Delegation eleva el límite de pods/nodo hasta 110. |
 | **Consecuencias** | Riesgo de interrupción SPOT mitigado con nodos en AZs distintas y `PodDisruptionBudget`. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-005: Separación de responsabilidades entre Terraform y ArgoCD**
+
+**Tabla 4.5.**
+*ADR-005: Decisión de separación de responsabilidades entre Terraform y ArgoCD*
 
 | Campo | Detalle |
 |-------|---------|
@@ -111,6 +134,8 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Decisión** | Terraform gestiona los componentes de plataforma (cert-manager, ESO, ingress-nginx, AWS LBC); ArgoCD gestiona exclusivamente los workloads FIWARE. |
 | **Justificación** | Los componentes de plataforma son prerrequisitos del propio ArgoCD. Delegarlos a ArgoCD crearía una dependencia circular en el proceso de *bootstrap*. |
 | **Consecuencias** | Mayor complejidad en el módulo `eks/bootstrap`. Separación limpia: Terraform = infraestructura + plataforma; ArgoCD = workloads. |
+
+*Fuente:* Elaboración propia.
 
 ---
 
@@ -140,6 +165,9 @@ module "eks" {
 }
 ```
 
+**Tabla 4.6.**
+*Módulos del framework Terraform desarrollado*
+
 | Módulo | Recurso principal |
 |--------|-------------------|
 | `vpc` | `aws_vpc` con Flow Logs opcionales |
@@ -153,6 +181,8 @@ module "eks" {
 | `secrets-manager` | Secretos en AWS Secrets Manager con generación aleatoria de contraseñas |
 | `iam` | Roles, políticas y usuarios IAM |
 | `eks` | Clúster EKS + node groups + IRSA + bootstrap de addons Helm |
+
+*Fuente:* Elaboración propia.
 
 **Gestión de estado remoto**
 
@@ -186,6 +216,9 @@ La autenticación entre GitHub Actions y AWS se implementa mediante OpenID Conne
 
 El submódulo `eks/bootstrap/` instala los componentes de plataforma vía Helm inmediatamente después de crear el clúster, sin intervención de ArgoCD:
 
+**Tabla 4.7.**
+*Addons de plataforma instalados mediante el módulo Terraform bootstrap*
+
 | Addon | Helm Chart | Namespace |
 |-------|-----------|-----------|
 | AWS Load Balancer Controller | `eks/aws-load-balancer-controller` | `kube-system` |
@@ -193,6 +226,8 @@ El submódulo `eks/bootstrap/` instala los componentes de plataforma vía Helm i
 | External Secrets Operator | `external-secrets/external-secrets` | `platform` |
 | ingress-nginx | `ingress-nginx/ingress-nginx` | `platform` |
 | metrics-server | `metrics-server/metrics-server` | `kube-system` |
+
+*Fuente:* Elaboración propia.
 
 > **Figura 4.5** — Output de `terraform apply` con EKS desplegado, mostrando el número de recursos creados y los *outputs* con `eks_cluster_endpoint` e IRSAs.
 > *Fuente: Elaboración propia. Capturar con: `terraform output -json | jq '.'`*
@@ -248,11 +283,16 @@ cluster-config      OutOfSync     Healthy  (*)
 
 Las dependencias entre componentes se gestionan mediante la anotación `argocd.argoproj.io/sync-wave`. ArgoCD no avanza a la siguiente ola hasta que todos los recursos de la ola actual están en estado `Healthy`:
 
+**Tabla 4.8.**
+*Distribución de componentes FIWARE por Sync Wave de ArgoCD*
+
 | Ola | Componentes | Razón |
 |-----|------------|-------|
 | 0 | MySQL (trust-anchor), MongoDB (provider) | Las bases de datos deben estar operativas antes que los servicios que dependen de ellas |
 | 1 | Keyrock, Trusted Issuers List, Credentials Config Service | El IdP y el registro de emisores deben existir antes del Context Broker |
 | 2 | Orion-LD | El Context Broker requiere MongoDB inicializado |
+
+*Fuente:* Elaboración propia.
 
 ### 4.2.3 Despliegue de Componentes FIWARE
 
@@ -373,12 +413,17 @@ El Sync Wave "3" de Kong (posterior a Orion en wave "2") garantiza que el Contex
 
 **ADR-006: Kong en modo DB-less**
 
+**Tabla 4.9.**
+*ADR-006: Decisión de despliegue de Kong en modo DB-less*
+
 | Campo | Detalle |
 |-------|---------|
 | **Estado** | Aceptado |
 | **Decisión** | Kong se despliega en modo DB-less (sin PostgreSQL). |
 | **Justificación** | El modo DB-less elimina el componente PostgreSQL (~512 MB RAM adicional), permitiendo que Kong opere en el margen de recursos disponibles en el entorno de laboratorio (2× t3a.large). La configuración estática es suficiente para el caso de uso del TFM. |
 | **Consecuencias** | Los cambios en la configuración de Kong requieren actualizar el ConfigMap y reiniciar el pod (no hay Admin API dinámica). En producción se recomienda modo DB con PostgreSQL para soporte de plugins dinámicos. |
+
+*Fuente:* Elaboración propia.
 
 ### 4.2.5 Gestión de Secretos (External Secrets Operator)
 
@@ -425,12 +470,17 @@ Los cuatro `ExternalSecret` en tres *namespaces* distintos sincronizan automáti
 
 Se implementan cuatro workflows de GitHub Actions:
 
+**Tabla 4.10.**
+*Workflows de GitHub Actions implementados en el pipeline CI/CD*
+
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
 | `terraform-validate.yml` | PR y push a `main` en `infra/**` | Calidad y seguridad del código IaC |
 | `infra-deploy.yml` | Push a `main` en `infra/**` | Despliegue con aprobación manual en GitHub Environments |
 | `gitops-validate.yml` | PR y push a `main` en `gitops/**` | Validación de manifests Kubernetes y Helm |
 | `security-scan.yml` | Push y PR (todas las ramas) | Detección de secretos y vulnerabilidades |
+
+*Fuente:* Elaboración propia.
 
 El workflow `terraform-validate.yml` ejecuta formato HCL, `terraform validate` y escaneo Checkov con los checks CKV_AWS_58 (cifrado de secrets EKS), CKV_AWS_79 (actualizaciones automáticas de nodos) y CKV_AWS_111 (S3 sin acceso público). El workflow `infra-deploy.yml` requiere aprobación manual en el entorno `aws-lab` antes de ejecutar el `apply`, con autenticación OIDC. El workflow `security-scan.yml` ejecuta TruffleHog (`--only-verified`) sobre el historial completo del repositorio y Checkov sobre los manifests Kubernetes.
 
@@ -447,6 +497,9 @@ Los resultados se presentan organizados en torno a los KPIs definidos en el Cap�
 
 **RD-1: Tiempo de despliegue completo**
 
+**Tabla 4.11.**
+*Tiempo de despliegue medido por fase (KPI RD-1)*
+
 | Fase | Componentes | Tiempo medido |
 |------|-------------|---------------|
 | IaC base | VPC, 9 subredes, 4 SGs, Route53, ACM, 4 secretos, S3 | ~3 min |
@@ -456,15 +509,22 @@ Los resultados se presentan organizados en torno a los KPIs definidos en el Cap�
 | GitOps — FIWARE | Wave 0 (DBs) → Wave 1 (IdP) → Wave 2 (Broker) | ~12 min |
 | **Total** | **Desde cero hasta stack FIWARE operativo** | **~40 min** |
 
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno desplegado en Amazon EKS eu-west-1.
+
 > **Figura 4.10** — Output de `terraform apply` con EKS desplegado, mostrando `Apply complete!` con el recuento de recursos y *timestamp*.
 > *Fuente: Elaboración propia. [pendiente de captura]*
 
 **RD-2: Pasos manuales requeridos**
 
+**Tabla 4.12.**
+*Pasos manuales requeridos en el proceso de despliegue (KPI RD-2)*
+
 | Paso | Razón | Frecuencia |
 |------|-------|-----------|
 | Aprobación en GitHub Environments | Control de cambios en infraestructura | Cada `terraform apply` en CI |
 | Delegación de NS a Route53 en el registrar DNS | Cambio de proveedor DNS, no automatizable sin acceso API del registrar | Una sola vez |
+
+*Fuente:* Elaboración propia.
 
 Todos los demás pasos están completamente automatizados.
 
@@ -494,11 +554,16 @@ ArgoCD con `automated.selfHeal: true` y período de reconciliación configurado 
 
 **SE-1: Checkov sobre código Terraform**
 
+**Tabla 4.13.**
+*Controles Checkov aplicados sobre el código Terraform (KPI SE-1)*
+
 | Check | Control | Configuración en el TFM |
 |-------|---------|------------------------|
 | CKV_AWS_58 | Cifrado de secrets EKS con KMS | Módulo `eks` con clave KMS propia |
 | CKV_AWS_79 | Actualizaciones automáticas de nodos | `update_config: max_unavailable = 1` en node group |
 | CKV_AWS_111 | S3 sin acceso público | `block_public_acls = true` en todos los *buckets* |
+
+*Fuente:* Elaboración propia basada en Bridgecrew by Palo Alto Networks (2024).
 
 Los resultados se publican como reporte SARIF en GitHub Security → Code Scanning.
 
@@ -516,6 +581,9 @@ El repositorio no contiene ningún valor de secreto. Los mecanismos de protecci�
 
 > **Deuda técnica documentada (ADR-006):** Kong no se desplegó en el alcance del presente trabajo por restricciones de memoria del entorno de laboratorio (2 nodos `t3a.large`, 8 GB RAM c/u). El stack FIWARE base (Keyrock, TIL, CCS, Orion-LD, MySQL, MongoDB) consume el 90% de la RAM disponible, dejando insuficientes recursos para Kong y su base de datos de configuración. En consecuencia, Orion-LD está accesible directamente sin capa de autorización en el entorno de validación, lo cual es admisible en un contexto académico pero constituye deuda técnica documentada para una implementación de producción.
 
+**Tabla 4.14.**
+*Escenarios de validación de autenticación Kong/JWT (KPI SE-3)*
+
 | Escenario | Resultado esperado | Mecanismo | Estado |
 |-----------|-------------------|-----------|--------|
 | Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación | ⚠️ Sin Kong: 200 directo |
@@ -523,11 +591,16 @@ El repositorio no contiene ningún valor de secreto. Los mecanismos de protecci�
 | Token de participante no registrado en TIL | `403 Forbidden` | TIL no encuentra el emisor | Pendiente Kong |
 | Token válido de participante registrado | `200 OK` + datos NGSI-LD | Flujo completo exitoso | Pendiente Kong |
 
+*Fuente:* Elaboración propia.
+
 La autenticación con Keyrock sí está operativa y verificada: el endpoint `/oauth2/token` devuelve respuesta `401` ante credenciales inválidas y emite tokens JWT válidos para aplicaciones registradas. El flujo de validación completo —incluyendo Kong como PEP— queda como trabajo futuro identificado en §5.2.
 
 ### 4.3.4 Conformidad con el Data Space (KPIs CF)
 
 **CF-1: Flujo parcial iSHARE — estado de validación**
+
+**Tabla 4.15.**
+*Estado de validación de endpoints del Data Space (KPI CF-1)*
 
 | Componente | Endpoint validado | HTTP | Estado |
 |-----------|-------------------|------|--------|
@@ -536,6 +609,8 @@ La autenticación con Keyrock sí está operativa y verificada: el endpoint `/oa
 | TIR | `https://tir.lab-jdmonsalvel.com/v4/issuers` | 200 | ✅ Operativo (lista vacía) |
 | CCS | `https://ccs.lab-jdmonsalvel.com/service` | 200 | ✅ Operativo (sin servicios configurados) |
 | Orion-LD | `https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities?type=X` | 200 | ✅ Operativo (sin entidades) |
+
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno en producción, región eu-west-1.
 
 El flujo completo de autenticación iSHARE —desde presentación de JWT hasta acceso autorizado a datos NGSI-LD mediado por Kong— está parcialmente pendiente por la ausencia de Kong. Los nodos de confianza (TIL, TIR) y el IdP (Keyrock) están operativos pero con registros vacíos, pendientes de configuración de participantes.
 
@@ -593,6 +668,9 @@ La respuesta `BadRequestData` ante una consulta sin filtros es comportamiento co
 
 ### 4.3.5 Análisis de Costes AWS
 
+**Tabla 4.16.**
+*Análisis de costes del entorno de laboratorio AWS*
+
 | Recurso | Coste/hora | Coste/mes estimado |
 |---------|-----------|---------------------|
 | EKS cluster endpoint | $0.10 | $72 |
@@ -602,6 +680,8 @@ La respuesta `BadRequestData` ante una consulta sin filtros es comportamiento co
 | Secrets Manager (4×) | — | ~$0.16 |
 | **Total activo (SPOT)** | **~$0.23/h** | **~$160/mes** |
 
+*Fuente:* Elaboración propia basada en AWS Pricing (2026). Precios SPOT sujetos a variación.
+
 La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala los *node groups* a 0 en horario de inactividad —22:00 a 14:00 UTC— reduce el coste mensual estimado a entre 50 y 60 USD, haciendo viable el entorno de laboratorio para la duración completa del TFM.
 
 > **Figura 4.18** — AWS Cost Explorer mostrando el coste acumulado del entorno por servicio.
@@ -610,6 +690,9 @@ La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala
 ---
 
 ### Guía de Evidencias a Capturar
+
+**Tabla 4.17.**
+*Guía de captura de evidencias del sistema en producción*
 
 | ID | Figura | Comando / Acción | Sección |
 |----|--------|-----------------|---------|
@@ -627,3 +710,5 @@ La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala
 | E12 | Fig 4.16 | `bash tests/smoke-test.sh` (4 pasos PASS) | §4.3.4 |
 | E13 | Fig 4.17 | `curl .../ngsi-ld/v1/entities -H 'Accept: application/ld+json' \| jq '.[0]."@context"'` | §4.3.4 |
 | E14 | Fig 4.18 | AWS Cost Explorer por servicio | §4.3.5 |
+
+*Fuente:* Elaboración propia.

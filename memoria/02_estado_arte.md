@@ -14,6 +14,9 @@ La Comisión Europea define un espacio de datos como «un marco de acuerdos téc
 
 El marco regulatorio que materializa esta estrategia descansa en cuatro instrumentos principales:
 
+**Tabla 2.1.**
+*Instrumentos normativos europeos de gobernanza de datos*
+
 | Instrumento | Referencia | Año | Relevancia para el trabajo |
 |-------------|-----------|-----|----------------------------|
 | Data Governance Act (DGA) | Reglamento UE 2022/868 | 2022 | Define los intermediarios de datos y sus obligaciones |
@@ -21,11 +24,16 @@ El marco regulatorio que materializa esta estrategia descansa en cuatro instrume
 | Directiva Open Data | Directiva UE 2019/1024 | 2019 | Reutilización de datos del sector público |
 | AI Act | Reglamento UE 2024/1689 | 2024 | Gobernanza de datos para sistemas de inteligencia artificial |
 
+*Fuente:* Elaboración propia a partir de European Parliament & Council (2019, 2022, 2023) y European Commission (2020).
+
 El **Data Governance Act** (DGA) constituye el instrumento más directamente relevante para el trabajo: introduce la figura del **intermediario de datos** —entidad que facilita el intercambio entre proveedores y consumidores sin apropiarse de los datos— y establece requisitos técnicos y organizativos para su operación. Conforme al artículo 12 del DGA, el intermediario debe garantizar la trazabilidad de las operaciones de intercambio, la separación del acceso propio a los datos de los datos de sus clientes, y la no utilización de los datos intercambiados para fines distintos a los declarados. El presente trabajo implementa precisamente un intermediario de datos conforme con esta figura: la plataforma FIWARE actúa como facilitador del intercambio sin retener los datos fuera del perímetro del proveedor, y el historial Git actúa como registro de auditoría de todos los cambios en la configuración del sistema.
 
 **Arquitecturas de referencia para Data Spaces**
 
 Desde la perspectiva técnica, dos iniciativas articulan los estándares de referencia. El **International Data Spaces Reference Architecture Model** (IDSA RAM v4, IDSA, 2022) estructura los componentes lógicos de un Data Space en cinco capas:
+
+**Tabla 2.2.**
+*Capas del IDSA Reference Architecture Model v4*
 
 | Capa | Responsabilidad | Componentes representativos |
 |------|----------------|----------------------------|
@@ -34,6 +42,8 @@ Desde la perspectiva técnica, dos iniciativas articulan los estándares de refe
 | Procesamiento | Ejecución de contratos y políticas | Policy Decision Points |
 | Confianza | Identidad y certificación | Trust Anchors, Satellite |
 | Gobernanza | Reglas del ecosistema | Certificación, auditoría |
+
+*Fuente:* Elaboración propia basada en IDSA (2022).
 
 El componente central del modelo IDSA es el **IDS Connector**, un intermediario técnico que implementa los protocolos de intercambio seguro con soporte para políticas de uso expresadas en ODRL (*Open Digital Rights Language*). A diferencia de los brokers de mensajería convencionales, el IDS Connector incorpora la negociación y aplicación de contratos de uso de datos, garantizando que los acuerdos entre partes se cumplen técnicamente de forma verificable.
 
@@ -52,6 +62,9 @@ Los elementos de iSHARE con incidencia directa en el presente trabajo son:
 
 **Comparativa con otros marcos de confianza**
 
+**Tabla 2.3.**
+*Comparativa de marcos de confianza para Data Spaces europeos*
+
 | Criterio | iSHARE | SOVRIN/SSI | X.509 / PKI Clásica |
 |---------|--------|------------|---------------------|
 | Modelo de identidad | Federado (Satellite) | Descentralizado (DID) | Jerárquico (CA) |
@@ -60,6 +73,8 @@ Los elementos de iSHARE con incidencia directa en el presente trabajo son:
 | Granularidad políticas | Alta (XACML) | Alta (VC claims) | Baja (roles estáticos) |
 | Tiempo de onboarding | Medio | Alto | Bajo |
 | Certificación eIDAS | Sí (nativa) | En desarrollo | Parcial |
+
+*Fuente:* Elaboración propia.
 
 La selección de iSHARE sobre SSI puro obedece a su mayor madurez operacional y al respaldo institucional de la DSBA, que lo señala como el esquema de confianza de referencia para Data Spaces basados en FIWARE. La integración con certificados eIDAS garantiza la admisibilidad legal del flujo de autenticación en el contexto regulatorio europeo.
 
@@ -88,6 +103,9 @@ Los componentes FIWARE desplegados en el presente trabajo cumplen roles arquitec
 
 **Análisis comparativo de Context Brokers**
 
+**Tabla 2.4.**
+*Análisis comparativo de Context Brokers NGSI-LD*
+
 | Criterio | FIWARE Orion-LD | Eclipse Ditto | FROST-Server |
 |---------|-----------------|---------------|-------------|
 | Especificación | ETSI NGSI-LD v1.6 | W3C WoT / JSON-PATCH | OGC SensorThings API |
@@ -98,6 +116,8 @@ Los componentes FIWARE desplegados en el presente trabajo cumplen roles arquitec
 | Madurez (producción) | Alta | Alta | Media |
 | Soporte EU Dataspaces | Oficial (DSBA) | En desarrollo | No |
 | Helm chart oficial | Sí (fiware/orion) | No | No |
+
+*Fuente:* Elaboración propia basada en FIWARE Foundation (2023a), ETSI (2023) y DSBA (2023).
 
 La decisión de seleccionar Orion-LD se fundamenta en la combinación de soporte nativo NGSI-LD, integración oficial con el DSBA TCF, disponibilidad de Helm chart mantenido y adopción verificada en proyectos industriales europeos.
 
@@ -113,6 +133,9 @@ El informe CNCF (2023b) documenta que el 75% de las organizaciones que adoptan K
 
 **Análisis comparativo ArgoCD vs FluxCD**
 
+**Tabla 2.5.**
+*Comparativa de operadores GitOps: ArgoCD v2.14 vs FluxCD v2.3*
+
 | Criterio | ArgoCD v2.14 | FluxCD v2.3 |
 |---------|-------------|------------|
 | Interfaz gráfica | Sí (UI completa) | No (solo CLI) |
@@ -125,6 +148,8 @@ El informe CNCF (2023b) documenta que el 75% de las organizaciones que adoptan K
 | Drift detection | Continua (30s) | Continua (configurable) |
 | Rollback | Manual (UI/CLI) | Automático (HelmRelease) |
 | Consumo RAM (baseline) | ~512 MB | ~256 MB |
+
+*Fuente:* Elaboración propia basada en ArgoCD (2023) y CNCF (2023b).
 
 La selección de ArgoCD se justifica por su interfaz gráfica para la supervisión operacional y demostración académica, su soporte nativo para el patrón App of Apps sin dependencias adicionales y su mayor penetración en adopción empresarial. La exclusión de FluxCD se justifica en la §2.2.2.
 
@@ -139,6 +164,9 @@ Terraform (HashiCorp, 2014) es la herramienta IaC más ampliamente adoptada en e
 Amazon EKS proporciona un plano de control Kubernetes gestionado que abstrae la operación de `etcd`, `kube-apiserver` y `kube-controller-manager` (AWS, 2023). La decisión de utilizar EKS frente a alternativas se analiza en profundidad en la §2.2.3.
 
 La selección del tipo de instancia `t3a.large` (2 vCPU, 8 GB RAM) responde al análisis de los requisitos reales de memoria del stack FIWARE completo:
+
+**Tabla 2.6.**
+*Requisitos de memoria del stack FIWARE completo*
 
 | Componente | RAM request | RAM limit | Namespace |
 |-----------|-------------|-----------|-----------|
@@ -155,6 +183,8 @@ La selección del tipo de instancia `t3a.large` (2 vCPU, 8 GB RAM) responde al a
 | ArgoCD (4 pods) | ~512 Mi | ~1 Gi | argocd |
 | Sistema (kube-system) | ~400 Mi | — | kube-system |
 | **Total requests** | **~3.3 Gi** | **~6.3 Gi** | — |
+
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno desplegado en Amazon EKS eu-west-1.
 
 La memoria *allocatable* por nodo `t3a.large` es de 7.1 GB. Con dos nodos en AZs distintas, la capacidad total alcanza 14.2 GB, proporcionando un margen del 56% sobre los límites declarados. Este margen garantiza la estabilidad ante SPOT interruptions donde todos los pods migran temporalmente a un único nodo. La instancia `t3.medium` (4 GB) fue descartada empíricamente: produce condiciones OOM durante el arranque simultáneo de Keyrock y MongoDB, dado que el proceso Node.js de Keyrock carga el motor XACML de AuthzForce (~600 MB en frío).
 
@@ -180,6 +210,9 @@ Esta sección justifica de forma explícita la exclusión de tecnologías releva
 
 **Análisis comparativo**
 
+**Tabla 2.7.**
+*Comparativa FIWARE/iSHARE vs Eclipse Dataspace Connector (EDC)*
+
 | Criterio | FIWARE + iSHARE | Eclipse EDC |
 |---------|-----------------|-------------|
 | Especificación de datos | ETSI NGSI-LD (estándar ETSI) | Sin especificación de modelo de datos propia |
@@ -190,6 +223,8 @@ Esta sección justifica de forma explícita la exclusión de tecnologías releva
 | Modelo de despliegue | Microservicios Kubernetes | JVM monolítico (en migración) |
 | Comunidad UE | FIWARE iHubs, DSSC, i4Trust | Eclipse Foundation, Catena-X |
 | Adopción en smart cities | Muy alta | Baja (foco industrial/automotriz) |
+
+*Fuente:* Elaboración propia basada en DSBA (2023) y IDSA (2022).
 
 **Justificación de exclusión.** La selección de FIWARE/iSHARE frente a EDC obedece a tres razones: (1) la especificación NGSI-LD es un estándar ETSI que proporciona un modelo de datos semánticamente rico, mientras que EDC no define un modelo de datos propio; (2) el DSBA TCF (DSBA, 2023) establece explícitamente FIWARE/iSHARE como la arquitectura de referencia recomendada para Data Spaces europeos en los ámbitos de smart cities, IoT y datos de contexto; (3) la disponibilidad de Helm charts mantenidos por la FIWARE Foundation facilita el despliegue declarativo en Kubernetes, que es el objetivo central del trabajo. La integración entre FIWARE y EDC está documentada en el DSBA TCF como un área de trabajo futuro (interoperabilidad entre ecosistemas), no como un prerrequisito actual.
 
@@ -233,6 +268,9 @@ La revisión de la literatura permite identificar cuatro categorías de trabajos
 
 **Análisis sistemático de trabajos relacionados**
 
+**Tabla 2.8.**
+*Análisis sistemático de trabajos relacionados*
+
 | Trabajo | Año | Tecnologías | Contribución | Limitación frente al TFM |
 |---------|-----|------------|-------------|--------------------------|
 | Llorente et al. | 2023 | FIWARE, Kubernetes, AWS/Azure | Análisis comparativo multi-cloud | Sin GitOps ni marcos de confianza europeos |
@@ -240,6 +278,8 @@ La revisión de la literatura permite identificar cuatro categorías de trabajos
 | DSBA TCF | 2023 | FIWARE, iSHARE, DSBA | Arquitectura de referencia DSBA | Sin implementación operacional ni código reproducible |
 | DSSC (i4Trust) | 2023 | FIWARE, i4Trust | Piloto Data Space en agroalimentación | Implementación manual, sin reproducibilidad |
 | HashiCorp | 2023 | Terraform, módulos reutilizables | Adopción de IaC en industria | Sin componentes FIWARE ni marcos de confianza |
+
+*Fuente:* Elaboración propia.
 
 **Despliegues FIWARE en entornos cloud.** Llorente et al. (2023) presentan un análisis comparativo de despliegues FIWARE en entornos multi-cloud, evaluando rendimiento y disponibilidad en AWS, Azure y GCP. El estudio identifica que los componentes de mayor consumo de recursos son Keyrock y MongoDB, y cuantifica el impacto del número de réplicas en la disponibilidad, datos coherentes con los resultados de dimensionamiento del presente trabajo. Sin embargo, los autores no abordan el paradigma GitOps ni la integración con marcos de Data Spaces europeos, limitándose a la dimensión operacional sin considerar la automatización del ciclo de vida.
 

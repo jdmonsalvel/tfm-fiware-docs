@@ -156,6 +156,9 @@ La Comisión Europea define un espacio de datos como «un marco de acuerdos téc
 
 El marco regulatorio que materializa esta estrategia descansa en cuatro instrumentos principales:
 
+**Tabla 2.1.**
+*Instrumentos normativos europeos de gobernanza de datos*
+
 | Instrumento | Referencia | Año | Relevancia para el trabajo |
 |-------------|-----------|-----|----------------------------|
 | Data Governance Act (DGA) | Reglamento UE 2022/868 | 2022 | Define los intermediarios de datos y sus obligaciones |
@@ -163,11 +166,16 @@ El marco regulatorio que materializa esta estrategia descansa en cuatro instrume
 | Directiva Open Data | Directiva UE 2019/1024 | 2019 | Reutilización de datos del sector público |
 | AI Act | Reglamento UE 2024/1689 | 2024 | Gobernanza de datos para sistemas de inteligencia artificial |
 
+*Fuente:* Elaboración propia a partir de European Parliament & Council (2019, 2022, 2023) y European Commission (2020).
+
 El **Data Governance Act** (DGA) constituye el instrumento más directamente relevante para el trabajo: introduce la figura del **intermediario de datos** —entidad que facilita el intercambio entre proveedores y consumidores sin apropiarse de los datos— y establece requisitos técnicos y organizativos para su operación. Conforme al artículo 12 del DGA, el intermediario debe garantizar la trazabilidad de las operaciones de intercambio, la separación del acceso propio a los datos de los datos de sus clientes, y la no utilización de los datos intercambiados para fines distintos a los declarados. El presente trabajo implementa precisamente un intermediario de datos conforme con esta figura: la plataforma FIWARE actúa como facilitador del intercambio sin retener los datos fuera del perímetro del proveedor, y el historial Git actúa como registro de auditoría de todos los cambios en la configuración del sistema.
 
 **Arquitecturas de referencia para Data Spaces**
 
 Desde la perspectiva técnica, dos iniciativas articulan los estándares de referencia. El **International Data Spaces Reference Architecture Model** (IDSA RAM v4, IDSA, 2022) estructura los componentes lógicos de un Data Space en cinco capas:
+
+**Tabla 2.2.**
+*Capas del IDSA Reference Architecture Model v4*
 
 | Capa | Responsabilidad | Componentes representativos |
 |------|----------------|----------------------------|
@@ -176,6 +184,8 @@ Desde la perspectiva técnica, dos iniciativas articulan los estándares de refe
 | Procesamiento | Ejecución de contratos y políticas | Policy Decision Points |
 | Confianza | Identidad y certificación | Trust Anchors, Satellite |
 | Gobernanza | Reglas del ecosistema | Certificación, auditoría |
+
+*Fuente:* Elaboración propia basada en IDSA (2022).
 
 El componente central del modelo IDSA es el **IDS Connector**, un intermediario técnico que implementa los protocolos de intercambio seguro con soporte para políticas de uso expresadas en ODRL (*Open Digital Rights Language*). A diferencia de los brokers de mensajería convencionales, el IDS Connector incorpora la negociación y aplicación de contratos de uso de datos, garantizando que los acuerdos entre partes se cumplen técnicamente de forma verificable.
 
@@ -194,6 +204,9 @@ Los elementos de iSHARE con incidencia directa en el presente trabajo son:
 
 **Comparativa con otros marcos de confianza**
 
+**Tabla 2.3.**
+*Comparativa de marcos de confianza para Data Spaces europeos*
+
 | Criterio | iSHARE | SOVRIN/SSI | X.509 / PKI Clásica |
 |---------|--------|------------|---------------------|
 | Modelo de identidad | Federado (Satellite) | Descentralizado (DID) | Jerárquico (CA) |
@@ -202,6 +215,8 @@ Los elementos de iSHARE con incidencia directa en el presente trabajo son:
 | Granularidad políticas | Alta (XACML) | Alta (VC claims) | Baja (roles estáticos) |
 | Tiempo de onboarding | Medio | Alto | Bajo |
 | Certificación eIDAS | Sí (nativa) | En desarrollo | Parcial |
+
+*Fuente:* Elaboración propia.
 
 La selección de iSHARE sobre SSI puro obedece a su mayor madurez operacional y al respaldo institucional de la DSBA, que lo señala como el esquema de confianza de referencia para Data Spaces basados en FIWARE. La integración con certificados eIDAS garantiza la admisibilidad legal del flujo de autenticación en el contexto regulatorio europeo.
 
@@ -230,6 +245,9 @@ Los componentes FIWARE desplegados en el presente trabajo cumplen roles arquitec
 
 **Análisis comparativo de Context Brokers**
 
+**Tabla 2.4.**
+*Análisis comparativo de Context Brokers NGSI-LD*
+
 | Criterio | FIWARE Orion-LD | Eclipse Ditto | FROST-Server |
 |---------|-----------------|---------------|-------------|
 | Especificación | ETSI NGSI-LD v1.6 | W3C WoT / JSON-PATCH | OGC SensorThings API |
@@ -240,6 +258,8 @@ Los componentes FIWARE desplegados en el presente trabajo cumplen roles arquitec
 | Madurez (producción) | Alta | Alta | Media |
 | Soporte EU Dataspaces | Oficial (DSBA) | En desarrollo | No |
 | Helm chart oficial | Sí (fiware/orion) | No | No |
+
+*Fuente:* Elaboración propia basada en FIWARE Foundation (2023a), ETSI (2023) y DSBA (2023).
 
 La decisión de seleccionar Orion-LD se fundamenta en la combinación de soporte nativo NGSI-LD, integración oficial con el DSBA TCF, disponibilidad de Helm chart mantenido y adopción verificada en proyectos industriales europeos.
 
@@ -255,6 +275,9 @@ El informe CNCF (2023b) documenta que el 75% de las organizaciones que adoptan K
 
 **Análisis comparativo ArgoCD vs FluxCD**
 
+**Tabla 2.5.**
+*Comparativa de operadores GitOps: ArgoCD v2.14 vs FluxCD v2.3*
+
 | Criterio | ArgoCD v2.14 | FluxCD v2.3 |
 |---------|-------------|------------|
 | Interfaz gráfica | Sí (UI completa) | No (solo CLI) |
@@ -267,6 +290,8 @@ El informe CNCF (2023b) documenta que el 75% de las organizaciones que adoptan K
 | Drift detection | Continua (30s) | Continua (configurable) |
 | Rollback | Manual (UI/CLI) | Automático (HelmRelease) |
 | Consumo RAM (baseline) | ~512 MB | ~256 MB |
+
+*Fuente:* Elaboración propia basada en ArgoCD (2023) y CNCF (2023b).
 
 La selección de ArgoCD se justifica por su interfaz gráfica para la supervisión operacional y demostración académica, su soporte nativo para el patrón App of Apps sin dependencias adicionales y su mayor penetración en adopción empresarial. La exclusión de FluxCD se justifica en la §2.2.2.
 
@@ -281,6 +306,9 @@ Terraform (HashiCorp, 2014) es la herramienta IaC más ampliamente adoptada en e
 Amazon EKS proporciona un plano de control Kubernetes gestionado que abstrae la operación de `etcd`, `kube-apiserver` y `kube-controller-manager` (AWS, 2023). La decisión de utilizar EKS frente a alternativas se analiza en profundidad en la §2.2.3.
 
 La selección del tipo de instancia `t3a.large` (2 vCPU, 8 GB RAM) responde al análisis de los requisitos reales de memoria del stack FIWARE completo:
+
+**Tabla 2.6.**
+*Requisitos de memoria del stack FIWARE completo*
 
 | Componente | RAM request | RAM limit | Namespace |
 |-----------|-------------|-----------|-----------|
@@ -297,6 +325,8 @@ La selección del tipo de instancia `t3a.large` (2 vCPU, 8 GB RAM) responde al a
 | ArgoCD (4 pods) | ~512 Mi | ~1 Gi | argocd |
 | Sistema (kube-system) | ~400 Mi | — | kube-system |
 | **Total requests** | **~3.3 Gi** | **~6.3 Gi** | — |
+
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno desplegado en Amazon EKS eu-west-1.
 
 La memoria *allocatable* por nodo `t3a.large` es de 7.1 GB. Con dos nodos en AZs distintas, la capacidad total alcanza 14.2 GB, proporcionando un margen del 56% sobre los límites declarados. Este margen garantiza la estabilidad ante SPOT interruptions donde todos los pods migran temporalmente a un único nodo. La instancia `t3.medium` (4 GB) fue descartada empíricamente: produce condiciones OOM durante el arranque simultáneo de Keyrock y MongoDB, dado que el proceso Node.js de Keyrock carga el motor XACML de AuthzForce (~600 MB en frío).
 
@@ -322,6 +352,9 @@ Esta sección justifica de forma explícita la exclusión de tecnologías releva
 
 **Análisis comparativo**
 
+**Tabla 2.7.**
+*Comparativa FIWARE/iSHARE vs Eclipse Dataspace Connector (EDC)*
+
 | Criterio | FIWARE + iSHARE | Eclipse EDC |
 |---------|-----------------|-------------|
 | Especificación de datos | ETSI NGSI-LD (estándar ETSI) | Sin especificación de modelo de datos propia |
@@ -332,6 +365,8 @@ Esta sección justifica de forma explícita la exclusión de tecnologías releva
 | Modelo de despliegue | Microservicios Kubernetes | JVM monolítico (en migración) |
 | Comunidad UE | FIWARE iHubs, DSSC, i4Trust | Eclipse Foundation, Catena-X |
 | Adopción en smart cities | Muy alta | Baja (foco industrial/automotriz) |
+
+*Fuente:* Elaboración propia basada en DSBA (2023) y IDSA (2022).
 
 **Justificación de exclusión.** La selección de FIWARE/iSHARE frente a EDC obedece a tres razones: (1) la especificación NGSI-LD es un estándar ETSI que proporciona un modelo de datos semánticamente rico, mientras que EDC no define un modelo de datos propio; (2) el DSBA TCF (DSBA, 2023) establece explícitamente FIWARE/iSHARE como la arquitectura de referencia recomendada para Data Spaces europeos en los ámbitos de smart cities, IoT y datos de contexto; (3) la disponibilidad de Helm charts mantenidos por la FIWARE Foundation facilita el despliegue declarativo en Kubernetes, que es el objetivo central del trabajo. La integración entre FIWARE y EDC está documentada en el DSBA TCF como un área de trabajo futuro (interoperabilidad entre ecosistemas), no como un prerrequisito actual.
 
@@ -375,6 +410,9 @@ La revisión de la literatura permite identificar cuatro categorías de trabajos
 
 **Análisis sistemático de trabajos relacionados**
 
+**Tabla 2.8.**
+*Análisis sistemático de trabajos relacionados*
+
 | Trabajo | Año | Tecnologías | Contribución | Limitación frente al TFM |
 |---------|-----|------------|-------------|--------------------------|
 | Llorente et al. | 2023 | FIWARE, Kubernetes, AWS/Azure | Análisis comparativo multi-cloud | Sin GitOps ni marcos de confianza europeos |
@@ -382,6 +420,8 @@ La revisión de la literatura permite identificar cuatro categorías de trabajos
 | DSBA TCF | 2023 | FIWARE, iSHARE, DSBA | Arquitectura de referencia DSBA | Sin implementación operacional ni código reproducible |
 | DSSC (i4Trust) | 2023 | FIWARE, i4Trust | Piloto Data Space en agroalimentación | Implementación manual, sin reproducibilidad |
 | HashiCorp | 2023 | Terraform, módulos reutilizables | Adopción de IaC en industria | Sin componentes FIWARE ni marcos de confianza |
+
+*Fuente:* Elaboración propia.
 
 **Despliegues FIWARE en entornos cloud.** Llorente et al. (2023) presentan un análisis comparativo de despliegues FIWARE en entornos multi-cloud, evaluando rendimiento y disponibilidad en AWS, Azure y GCP. El estudio identifica que los componentes de mayor consumo de recursos son Keyrock y MongoDB, y cuantifica el impacto del número de réplicas en la disponibilidad, datos coherentes con los resultados de dimensionamiento del presente trabajo. Sin embargo, los autores no abordan el paradigma GitOps ni la integración con marcos de Data Spaces europeos, limitándose a la dimensión operacional sin considerar la automatización del ciclo de vida.
 
@@ -482,20 +522,33 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 
 **Dimensión 1 — Reproducibilidad**
 
+**Tabla 3.1.**
+*KPIs de la dimensión Reproducibilidad del despliegue*
+
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | RD-1 | Tiempo de despliegue completo desde `terraform apply` hasta plataforma operativa | < 30 minutos |
 | RD-2 | Número de pasos manuales requeridos en el despliegue | ≤ 2 |
 | RD-3 | Éxito en re-despliegue tras destrucción total (teardown + bootstrap) | 100% |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 2 — Resiliencia**
+
+**Tabla 3.2.**
+*KPIs de la dimensión Resiliencia del sistema*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | RS-1 | *Recovery Time Objective* (RTO) tras simulación de fallo de nodo | < 5 minutos |
 | RS-2 | Tiempo de re-sincronización de ArgoCD tras *drift* manual en el clúster | < 3 minutos |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 3 — Seguridad**
+
+**Tabla 3.3.**
+*KPIs de la dimensión Seguridad*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
@@ -503,14 +556,24 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 | SE-2 | Secretos expuestos detectados por TruffleHog en el repositorio | 0 |
 | SE-3 | Solicitudes sin token JWT válido rechazadas por Kong | 100% de rechazos |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 4 — Conformidad con el Data Space**
+
+**Tabla 3.4.**
+*KPIs de la dimensión Conformidad con el Data Space*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | CF-1 | Validación del flujo completo iSHARE (token → acceso a datos) | Exitoso |
 | CF-2 | Respuesta correcta a consulta NGSI-LD v1.6 (`/entities`) | HTTP 200 + JSON-LD |
 
+*Fuente:* Elaboración propia.
+
 ## 3.5 Herramientas y Tecnologías
+
+**Tabla 3.5.**
+*Herramientas y tecnologías utilizadas en el proyecto con justificación de selección*
 
 | Categoría | Herramienta | Versión | Justificación |
 |-----------|-------------|---------|---------------|
@@ -525,6 +588,8 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 | CI/CD | GitHub Actions | — | Integración nativa con el repositorio; soporte para OIDC con AWS |
 | Seguridad IaC | Checkov | ≥ 3.x | Escaneo de código Terraform y manifests Kubernetes |
 | Seguridad Git | TruffleHog | ≥ 3.x | Detección de secretos en el historial de commits |
+
+*Fuente:* Elaboración propia.
 
 ---
 
@@ -599,6 +664,9 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 
 **ADR-001: Selección de ArgoCD sobre FluxCD**
 
+**Tabla 4.1.**
+*ADR-001: Decisión de selección de ArgoCD sobre FluxCD*
+
 | Campo | Detalle |
 |-------|---------|
 | **Estado** | Aceptado |
@@ -607,7 +675,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | ArgoCD ofrece interfaz gráfica para supervisión visual del estado de sincronización, soporte nativo para App of Apps sin dependencias adicionales, y mayor adopción empresarial que incrementa la transferibilidad del modelo. |
 | **Consecuencias** | Mayor consumo de memoria (~512 MB adicionales respecto a Flux), asumible en el entorno de laboratorio. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-002: Región AWS eu-west-1**
+
+**Tabla 4.2.**
+*ADR-002: Decisión de región AWS eu-west-1*
 
 | Campo | Detalle |
 |-------|---------|
@@ -616,7 +689,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | Conformidad RGPD, residencia de datos en la UE, disponibilidad de todos los servicios AWS requeridos y menor latencia hacia nodos del ecosistema Gaia-X. |
 | **Consecuencias** | No se identifican consecuencias negativas para el alcance del trabajo. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-003: MongoDB en modo *standalone***
+
+**Tabla 4.3.**
+*ADR-003: Decisión de despliegue de MongoDB en modo standalone*
 
 | Campo | Detalle |
 |-------|---------|
@@ -625,7 +703,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | El modo *replica set* incrementaría los costes en ~5 USD/día sin aportar valor adicional a los objetivos definidos. |
 | **Deuda técnica** | En producción se requiere modo *replica set* con 3 miembros para HA y consistencia fuerte. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-004: Instancias t3a.large en modalidad SPOT**
+
+**Tabla 4.4.**
+*ADR-004: Decisión de uso de instancias t3a.large en modalidad SPOT*
 
 | Campo | Detalle |
 |-------|---------|
@@ -634,7 +717,12 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Justificación** | Tamaño mínimo viable para el stack FIWARE completo (~8-10 GB RAM). Las instancias SPOT reducen el coste en ~70% respecto a On-Demand. VPC CNI Prefix Delegation eleva el límite de pods/nodo hasta 110. |
 | **Consecuencias** | Riesgo de interrupción SPOT mitigado con nodos en AZs distintas y `PodDisruptionBudget`. |
 
+*Fuente:* Elaboración propia.
+
 **ADR-005: Separación de responsabilidades entre Terraform y ArgoCD**
+
+**Tabla 4.5.**
+*ADR-005: Decisión de separación de responsabilidades entre Terraform y ArgoCD*
 
 | Campo | Detalle |
 |-------|---------|
@@ -642,6 +730,8 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 | **Decisión** | Terraform gestiona los componentes de plataforma (cert-manager, ESO, ingress-nginx, AWS LBC); ArgoCD gestiona exclusivamente los workloads FIWARE. |
 | **Justificación** | Los componentes de plataforma son prerrequisitos del propio ArgoCD. Delegarlos a ArgoCD crearía una dependencia circular en el proceso de *bootstrap*. |
 | **Consecuencias** | Mayor complejidad en el módulo `eks/bootstrap`. Separación limpia: Terraform = infraestructura + plataforma; ArgoCD = workloads. |
+
+*Fuente:* Elaboración propia.
 
 ---
 
@@ -671,6 +761,9 @@ module "eks" {
 }
 ```
 
+**Tabla 4.6.**
+*Módulos del framework Terraform desarrollado*
+
 | Módulo | Recurso principal |
 |--------|-------------------|
 | `vpc` | `aws_vpc` con Flow Logs opcionales |
@@ -684,6 +777,8 @@ module "eks" {
 | `secrets-manager` | Secretos en AWS Secrets Manager con generación aleatoria de contraseñas |
 | `iam` | Roles, políticas y usuarios IAM |
 | `eks` | Clúster EKS + node groups + IRSA + bootstrap de addons Helm |
+
+*Fuente:* Elaboración propia.
 
 **Gestión de estado remoto**
 
@@ -717,6 +812,9 @@ La autenticación entre GitHub Actions y AWS se implementa mediante OpenID Conne
 
 El submódulo `eks/bootstrap/` instala los componentes de plataforma vía Helm inmediatamente después de crear el clúster, sin intervención de ArgoCD:
 
+**Tabla 4.7.**
+*Addons de plataforma instalados mediante el módulo Terraform bootstrap*
+
 | Addon | Helm Chart | Namespace |
 |-------|-----------|-----------|
 | AWS Load Balancer Controller | `eks/aws-load-balancer-controller` | `kube-system` |
@@ -724,6 +822,8 @@ El submódulo `eks/bootstrap/` instala los componentes de plataforma vía Helm i
 | External Secrets Operator | `external-secrets/external-secrets` | `platform` |
 | ingress-nginx | `ingress-nginx/ingress-nginx` | `platform` |
 | metrics-server | `metrics-server/metrics-server` | `kube-system` |
+
+*Fuente:* Elaboración propia.
 
 > **Figura 4.5** — Output de `terraform apply` con EKS desplegado, mostrando el número de recursos creados y los *outputs* con `eks_cluster_endpoint` e IRSAs.
 > *Fuente: Elaboración propia. Capturar con: `terraform output -json | jq '.'`*
@@ -779,11 +879,16 @@ cluster-config      OutOfSync     Healthy  (*)
 
 Las dependencias entre componentes se gestionan mediante la anotación `argocd.argoproj.io/sync-wave`. ArgoCD no avanza a la siguiente ola hasta que todos los recursos de la ola actual están en estado `Healthy`:
 
+**Tabla 4.8.**
+*Distribución de componentes FIWARE por Sync Wave de ArgoCD*
+
 | Ola | Componentes | Razón |
 |-----|------------|-------|
 | 0 | MySQL (trust-anchor), MongoDB (provider) | Las bases de datos deben estar operativas antes que los servicios que dependen de ellas |
 | 1 | Keyrock, Trusted Issuers List, Credentials Config Service | El IdP y el registro de emisores deben existir antes del Context Broker |
 | 2 | Orion-LD | El Context Broker requiere MongoDB inicializado |
+
+*Fuente:* Elaboración propia.
 
 ### 4.2.3 Despliegue de Componentes FIWARE
 
@@ -904,12 +1009,17 @@ El Sync Wave "3" de Kong (posterior a Orion en wave "2") garantiza que el Contex
 
 **ADR-006: Kong en modo DB-less**
 
+**Tabla 4.9.**
+*ADR-006: Decisión de despliegue de Kong en modo DB-less*
+
 | Campo | Detalle |
 |-------|---------|
 | **Estado** | Aceptado |
 | **Decisión** | Kong se despliega en modo DB-less (sin PostgreSQL). |
 | **Justificación** | El modo DB-less elimina el componente PostgreSQL (~512 MB RAM adicional), permitiendo que Kong opere en el margen de recursos disponibles en el entorno de laboratorio (2× t3a.large). La configuración estática es suficiente para el caso de uso del TFM. |
 | **Consecuencias** | Los cambios en la configuración de Kong requieren actualizar el ConfigMap y reiniciar el pod (no hay Admin API dinámica). En producción se recomienda modo DB con PostgreSQL para soporte de plugins dinámicos. |
+
+*Fuente:* Elaboración propia.
 
 ### 4.2.5 Gestión de Secretos (External Secrets Operator)
 
@@ -956,12 +1066,17 @@ Los cuatro `ExternalSecret` en tres *namespaces* distintos sincronizan automáti
 
 Se implementan cuatro workflows de GitHub Actions:
 
+**Tabla 4.10.**
+*Workflows de GitHub Actions implementados en el pipeline CI/CD*
+
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
 | `terraform-validate.yml` | PR y push a `main` en `infra/**` | Calidad y seguridad del código IaC |
 | `infra-deploy.yml` | Push a `main` en `infra/**` | Despliegue con aprobación manual en GitHub Environments |
 | `gitops-validate.yml` | PR y push a `main` en `gitops/**` | Validación de manifests Kubernetes y Helm |
 | `security-scan.yml` | Push y PR (todas las ramas) | Detección de secretos y vulnerabilidades |
+
+*Fuente:* Elaboración propia.
 
 El workflow `terraform-validate.yml` ejecuta formato HCL, `terraform validate` y escaneo Checkov con los checks CKV_AWS_58 (cifrado de secrets EKS), CKV_AWS_79 (actualizaciones automáticas de nodos) y CKV_AWS_111 (S3 sin acceso público). El workflow `infra-deploy.yml` requiere aprobación manual en el entorno `aws-lab` antes de ejecutar el `apply`, con autenticación OIDC. El workflow `security-scan.yml` ejecuta TruffleHog (`--only-verified`) sobre el historial completo del repositorio y Checkov sobre los manifests Kubernetes.
 
@@ -978,6 +1093,9 @@ Los resultados se presentan organizados en torno a los KPIs definidos en el Cap�
 
 **RD-1: Tiempo de despliegue completo**
 
+**Tabla 4.11.**
+*Tiempo de despliegue medido por fase (KPI RD-1)*
+
 | Fase | Componentes | Tiempo medido |
 |------|-------------|---------------|
 | IaC base | VPC, 9 subredes, 4 SGs, Route53, ACM, 4 secretos, S3 | ~3 min |
@@ -987,15 +1105,22 @@ Los resultados se presentan organizados en torno a los KPIs definidos en el Cap�
 | GitOps — FIWARE | Wave 0 (DBs) → Wave 1 (IdP) → Wave 2 (Broker) | ~12 min |
 | **Total** | **Desde cero hasta stack FIWARE operativo** | **~40 min** |
 
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno desplegado en Amazon EKS eu-west-1.
+
 > **Figura 4.10** — Output de `terraform apply` con EKS desplegado, mostrando `Apply complete!` con el recuento de recursos y *timestamp*.
 > *Fuente: Elaboración propia. [pendiente de captura]*
 
 **RD-2: Pasos manuales requeridos**
 
+**Tabla 4.12.**
+*Pasos manuales requeridos en el proceso de despliegue (KPI RD-2)*
+
 | Paso | Razón | Frecuencia |
 |------|-------|-----------|
 | Aprobación en GitHub Environments | Control de cambios en infraestructura | Cada `terraform apply` en CI |
 | Delegación de NS a Route53 en el registrar DNS | Cambio de proveedor DNS, no automatizable sin acceso API del registrar | Una sola vez |
+
+*Fuente:* Elaboración propia.
 
 Todos los demás pasos están completamente automatizados.
 
@@ -1025,11 +1150,16 @@ ArgoCD con `automated.selfHeal: true` y período de reconciliación configurado 
 
 **SE-1: Checkov sobre código Terraform**
 
+**Tabla 4.13.**
+*Controles Checkov aplicados sobre el código Terraform (KPI SE-1)*
+
 | Check | Control | Configuración en el TFM |
 |-------|---------|------------------------|
 | CKV_AWS_58 | Cifrado de secrets EKS con KMS | Módulo `eks` con clave KMS propia |
 | CKV_AWS_79 | Actualizaciones automáticas de nodos | `update_config: max_unavailable = 1` en node group |
 | CKV_AWS_111 | S3 sin acceso público | `block_public_acls = true` en todos los *buckets* |
+
+*Fuente:* Elaboración propia basada en Bridgecrew by Palo Alto Networks (2024).
 
 Los resultados se publican como reporte SARIF en GitHub Security → Code Scanning.
 
@@ -1047,6 +1177,9 @@ El repositorio no contiene ningún valor de secreto. Los mecanismos de protecci�
 
 > **Deuda técnica documentada (ADR-006):** Kong no se desplegó en el alcance del presente trabajo por restricciones de memoria del entorno de laboratorio (2 nodos `t3a.large`, 8 GB RAM c/u). El stack FIWARE base (Keyrock, TIL, CCS, Orion-LD, MySQL, MongoDB) consume el 90% de la RAM disponible, dejando insuficientes recursos para Kong y su base de datos de configuración. En consecuencia, Orion-LD está accesible directamente sin capa de autorización en el entorno de validación, lo cual es admisible en un contexto académico pero constituye deuda técnica documentada para una implementación de producción.
 
+**Tabla 4.14.**
+*Escenarios de validación de autenticación Kong/JWT (KPI SE-3)*
+
 | Escenario | Resultado esperado | Mecanismo | Estado |
 |-----------|-------------------|-----------|--------|
 | Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación | ⚠️ Sin Kong: 200 directo |
@@ -1054,11 +1187,16 @@ El repositorio no contiene ningún valor de secreto. Los mecanismos de protecci�
 | Token de participante no registrado en TIL | `403 Forbidden` | TIL no encuentra el emisor | Pendiente Kong |
 | Token válido de participante registrado | `200 OK` + datos NGSI-LD | Flujo completo exitoso | Pendiente Kong |
 
+*Fuente:* Elaboración propia.
+
 La autenticación con Keyrock sí está operativa y verificada: el endpoint `/oauth2/token` devuelve respuesta `401` ante credenciales inválidas y emite tokens JWT válidos para aplicaciones registradas. El flujo de validación completo —incluyendo Kong como PEP— queda como trabajo futuro identificado en §5.2.
 
 ### 4.3.4 Conformidad con el Data Space (KPIs CF)
 
 **CF-1: Flujo parcial iSHARE — estado de validación**
+
+**Tabla 4.15.**
+*Estado de validación de endpoints del Data Space (KPI CF-1)*
 
 | Componente | Endpoint validado | HTTP | Estado |
 |-----------|-------------------|------|--------|
@@ -1067,6 +1205,8 @@ La autenticación con Keyrock sí está operativa y verificada: el endpoint `/oa
 | TIR | `https://tir.lab-jdmonsalvel.com/v4/issuers` | 200 | ✅ Operativo (lista vacía) |
 | CCS | `https://ccs.lab-jdmonsalvel.com/service` | 200 | ✅ Operativo (sin servicios configurados) |
 | Orion-LD | `https://orion.lab-jdmonsalvel.com/ngsi-ld/v1/entities?type=X` | 200 | ✅ Operativo (sin entidades) |
+
+*Fuente:* Elaboración propia. Mediciones obtenidas del entorno en producción, región eu-west-1.
 
 El flujo completo de autenticación iSHARE —desde presentación de JWT hasta acceso autorizado a datos NGSI-LD mediado por Kong— está parcialmente pendiente por la ausencia de Kong. Los nodos de confianza (TIL, TIR) y el IdP (Keyrock) están operativos pero con registros vacíos, pendientes de configuración de participantes.
 
@@ -1124,6 +1264,9 @@ La respuesta `BadRequestData` ante una consulta sin filtros es comportamiento co
 
 ### 4.3.5 Análisis de Costes AWS
 
+**Tabla 4.16.**
+*Análisis de costes del entorno de laboratorio AWS*
+
 | Recurso | Coste/hora | Coste/mes estimado |
 |---------|-----------|---------------------|
 | EKS cluster endpoint | $0.10 | $72 |
@@ -1133,6 +1276,8 @@ La respuesta `BadRequestData` ante una consulta sin filtros es comportamiento co
 | Secrets Manager (4×) | — | ~$0.16 |
 | **Total activo (SPOT)** | **~$0.23/h** | **~$160/mes** |
 
+*Fuente:* Elaboración propia basada en AWS Pricing (2026). Precios SPOT sujetos a variación.
+
 La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala los *node groups* a 0 en horario de inactividad —22:00 a 14:00 UTC— reduce el coste mensual estimado a entre 50 y 60 USD, haciendo viable el entorno de laboratorio para la duración completa del TFM.
 
 > **Figura 4.18** — AWS Cost Explorer mostrando el coste acumulado del entorno por servicio.
@@ -1141,6 +1286,9 @@ La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala
 ---
 
 ### Guía de Evidencias a Capturar
+
+**Tabla 4.17.**
+*Guía de captura de evidencias del sistema en producción*
 
 | ID | Figura | Comando / Acción | Sección |
 |----|--------|-----------------|---------|
@@ -1158,6 +1306,8 @@ La implantación de un Lambda *node scheduler* (EventBridge + Lambda) que escala
 | E12 | Fig 4.16 | `bash tests/smoke-test.sh` (4 pasos PASS) | §4.3.4 |
 | E13 | Fig 4.17 | `curl .../ngsi-ld/v1/entities -H 'Accept: application/ld+json' \| jq '.[0]."@context"'` | §4.3.4 |
 | E14 | Fig 4.18 | AWS Cost Explorer por servicio | §4.3.5 |
+
+*Fuente:* Elaboración propia.
 
 ---
 
@@ -1178,6 +1328,9 @@ La tercera contribución es el **pipeline de seguridad formalizado**: un flujo C
 
 **Cumplimiento de objetivos específicos**
 
+**Tabla 5.1.**
+*Cumplimiento de los objetivos específicos del trabajo*
+
 | Objetivo | Estado | Observaciones |
 |----------|--------|---------------|
 | OE-1: Análisis comparativo de tecnologías | ✅ Cumplido | Capítulo 2, tablas comparativas, conclusiones del estado del arte |
@@ -1186,6 +1339,8 @@ La tercera contribución es el **pipeline de seguridad formalizado**: un flujo C
 | OE-4: Repositorio GitOps con App of Apps | ✅ Cumplido | ArgoCD con 5 Applications FIWARE en producción, Sync Waves |
 | OE-5: Pipeline CI/CD con validación de seguridad | ✅ Cumplido | 4 workflows de GitHub Actions operativos |
 | OE-6: Validación con métricas operacionales | ✅ Cumplido parcialmente | KPIs RD-1/2/3, RS-2, SE-1/2, CF-2 validados. SE-3 y CF-1 completo pendientes de Kong (ADR-006) |
+
+*Fuente:* Elaboración propia.
 
 **Limitaciones**
 

@@ -68,20 +68,33 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 
 **Dimensión 1 — Reproducibilidad**
 
+**Tabla 3.1.**
+*KPIs de la dimensión Reproducibilidad del despliegue*
+
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | RD-1 | Tiempo de despliegue completo desde `terraform apply` hasta plataforma operativa | < 30 minutos |
 | RD-2 | Número de pasos manuales requeridos en el despliegue | ≤ 2 |
 | RD-3 | Éxito en re-despliegue tras destrucción total (teardown + bootstrap) | 100% |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 2 — Resiliencia**
+
+**Tabla 3.2.**
+*KPIs de la dimensión Resiliencia del sistema*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | RS-1 | *Recovery Time Objective* (RTO) tras simulación de fallo de nodo | < 5 minutos |
 | RS-2 | Tiempo de re-sincronización de ArgoCD tras *drift* manual en el clúster | < 3 minutos |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 3 — Seguridad**
+
+**Tabla 3.3.**
+*KPIs de la dimensión Seguridad*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
@@ -89,14 +102,24 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 | SE-2 | Secretos expuestos detectados por TruffleHog en el repositorio | 0 |
 | SE-3 | Solicitudes sin token JWT válido rechazadas por Kong | 100% de rechazos |
 
+*Fuente:* Elaboración propia.
+
 **Dimensión 4 — Conformidad con el Data Space**
+
+**Tabla 3.4.**
+*KPIs de la dimensión Conformidad con el Data Space*
 
 | KPI | Descripción | Umbral aceptable |
 |-----|-------------|------------------|
 | CF-1 | Validación del flujo completo iSHARE (token → acceso a datos) | Exitoso |
 | CF-2 | Respuesta correcta a consulta NGSI-LD v1.6 (`/entities`) | HTTP 200 + JSON-LD |
 
+*Fuente:* Elaboración propia.
+
 ## 3.5 Herramientas y Tecnologías
+
+**Tabla 3.5.**
+*Herramientas y tecnologías utilizadas en el proyecto con justificación de selección*
 
 | Categoría | Herramienta | Versión | Justificación |
 |-----------|-------------|---------|---------------|
@@ -111,3 +134,5 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 | CI/CD | GitHub Actions | — | Integración nativa con el repositorio; soporte para OIDC con AWS |
 | Seguridad IaC | Checkov | ≥ 3.x | Escaneo de código Terraform y manifests Kubernetes |
 | Seguridad Git | TruffleHog | ≥ 3.x | Detección de secretos en el historial de commits |
+
+*Fuente:* Elaboración propia.

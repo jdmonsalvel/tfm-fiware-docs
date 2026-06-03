@@ -14,6 +14,9 @@ La tercera contribución es el **pipeline de seguridad formalizado**: un flujo C
 
 **Cumplimiento de objetivos específicos**
 
+**Tabla 5.1.**
+*Cumplimiento de los objetivos específicos del trabajo*
+
 | Objetivo | Estado | Observaciones |
 |----------|--------|---------------|
 | OE-1: Análisis comparativo de tecnologías | ✅ Cumplido | Capítulo 2, tablas comparativas, conclusiones del estado del arte |
@@ -22,6 +25,8 @@ La tercera contribución es el **pipeline de seguridad formalizado**: un flujo C
 | OE-4: Repositorio GitOps con App of Apps | ✅ Cumplido | ArgoCD con 5 Applications FIWARE en producción, Sync Waves |
 | OE-5: Pipeline CI/CD con validación de seguridad | ✅ Cumplido | 4 workflows de GitHub Actions operativos |
 | OE-6: Validación con métricas operacionales | ✅ Cumplido parcialmente | KPIs RD-1/2/3, RS-2, SE-1/2, CF-2 validados. SE-3 y CF-1 completo pendientes de Kong (ADR-006) |
+
+*Fuente:* Elaboración propia.
 
 **Limitaciones**
 
