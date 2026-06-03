@@ -1,0 +1,19 @@
+# Documentos de trabajo y exportaciones — no versionar
+TFM_*.md
+TFM_*.docx
+TFM_*.pdf
+*.docx
+*.pdf
+
+# Lock files de editores
+.~lock.*
+*.lock
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*~
+
+# Archivos generados por Claude (imágenes de baja calidad)
+memoria/Imagenes/fig_2_1_ngsi_ld_model.png
+memoria/Imagenes/fig_4_1_c4_context.png
