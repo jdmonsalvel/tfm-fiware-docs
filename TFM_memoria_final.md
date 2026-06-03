@@ -598,6 +598,17 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 
 El presente capítulo constituye el núcleo técnico del trabajo y describe en detalle el proceso de diseño, implementación y evaluación del modelo de referencia propuesto. Se estructura en tres secciones que siguen el ciclo de vida del proyecto. La §4.1 cubre la fase de planificación y diseño: los principios arquitectónicos que guían todas las decisiones técnicas, el modelo C4 que documenta la arquitectura en dos niveles de abstracción, la topología de red AWS, el modelo de identidades y acceso, y las seis Decisiones de Arquitectura (ADRs) que registran formalmente las elecciones de diseño más relevantes con su contexto, justificación y consecuencias. La §4.2 describe el sistema implementado componente a componente: el framework Terraform, el operador GitOps ArgoCD con el patrón App of Apps y Sync Waves, el despliegue de los cinco componentes FIWARE, Kong como Policy Enforcement Point, la gestión de secretos con ESO y los cuatro pipelines CI/CD. La §4.3 presenta la evaluación del modelo mediante los diez KPIs definidos en el Capítulo 3, con las evidencias recogidas del sistema en producción y el análisis de costes del entorno de laboratorio.
 
+La figura siguiente ofrece una visión integral del sistema antes de describir cada componente en detalle.
+
+**Figura 4.0.**
+*Visión integral del sistema: flujo completo desde el control de versiones hasta el Data Space FIWARE en producción*
+
+![Figura 4.0. Diagrama de funcionamiento de la plataforma FIWARE GitOps](memoria/Imagenes/Diagrama de funcionamiento de plataforma.png)
+
+*Fuente:* Elaboración propia.
+
+---
+
 ## 4.1 Planificación, Análisis y Requisitos
 
 La fase de planificación tiene por objetivo transformar los requisitos del problema —despliegue automatizado, reproducible y conforme con los estándares europeos de Data Spaces— en decisiones de diseño concretas y trazables. Se parte de los seis principios arquitectónicos que actúan como restricciones transversales a todas las decisiones técnicas, y se construye progresivamente la arquitectura del sistema: primero a nivel contextual y de contenedores mediante el modelo C4, luego a nivel de red e identidades, y finalmente en las Decisiones de Arquitectura (ADRs) que documentan formalmente las elecciones más significativas. Este conjunto de artefactos de diseño constituye la base sobre la que se implementa el sistema descrito en §4.2, y establece los criterios que se evalúan en §4.3.
@@ -639,8 +650,12 @@ La plataforma se despliega en un clúster Amazon EKS organizado en cuatro *names
 
 ### 4.1.3 Topología de Red AWS
 
-> **Figura 4.3** — Diagrama de red AWS: VPC en tres capas, NLB, NAT Gateway y nodos EKS.
-> *Fuente: Elaboración propia.*
+**Figura 4.3.**
+*Topología de red AWS: VPC fiware-vpc en tres capas, zonas de disponibilidad, Security Groups y flujo de tráfico*
+
+![Figura 4.3. Topología de red AWS — VPC en tres capas con subredes públicas, de aplicación y de datos distribuidas en tres zonas de disponibilidad](memoria/Imagenes/Fig 4-3 Topología de red AWS.png)
+
+*Fuente:* Elaboración propia.
 
 La infraestructura de red sigue el patrón recomendado por la AWS EKS Best Practices Guide (AWS, 2023). La VPC `fiware-vpc` (`10.0.0.0/16`) en `eu-west-1` implementa tres capas con nueve subredes distribuidas en tres zonas de disponibilidad: subredes públicas para el NLB y el NAT Gateway; subredes de aplicación para los nodos worker EKS (`t3a.large` SPOT, sin IPs públicas); y subredes de datos reservadas para bases de datos. La región `eu-west-1` (Irlanda) se selecciona por su conformidad con el RGPD y la proximidad al ecosistema Gaia-X europeo.
 
@@ -825,8 +840,14 @@ El submódulo `eks/bootstrap/` instala los componentes de plataforma vía Helm i
 
 *Fuente:* Elaboración propia.
 
-> **Figura 4.5** — Output de `terraform apply` con EKS desplegado, mostrando el número de recursos creados y los *outputs* con `eks_cluster_endpoint` e IRSAs.
-> *Fuente: Elaboración propia. Capturar con: `terraform output -json | jq '.'`*
+La figura siguiente muestra el conjunto completo de servicios AWS aprovisionados por Terraform, incluyendo el clúster EKS, los mecanismos de autenticación sin credenciales estáticas (IRSA, OIDC), la gestión de secretos, el pipeline CI/CD y el scheduler de nodos para control de costes.
+
+**Figura 4.5.**
+*Infraestructura AWS desplegada: servicios, aplicaciones y componentes de seguridad y gestión de costes*
+
+![Figura 4.5. Infraestructura AWS — servicios y aplicaciones desplegados por Terraform en eu-west-1](memoria/Imagenes/Diagrama infraestructura de servicios aws.png)
+
+*Fuente:* Elaboración propia.
 
 ### 4.2.2 Bootstrap del Operador GitOps (ArgoCD)
 
