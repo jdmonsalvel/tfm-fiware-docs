@@ -531,7 +531,11 @@ La validación del modelo propuesto se realiza mediante indicadores clave de ren
 
 # 4. Desarrollo Específico de la Contribución
 
+El presente capítulo constituye el núcleo técnico del trabajo y describe en detalle el proceso de diseño, implementación y evaluación del modelo de referencia propuesto. Se estructura en tres secciones que siguen el ciclo de vida del proyecto. La §4.1 cubre la fase de planificación y diseño: los principios arquitectónicos que guían todas las decisiones técnicas, el modelo C4 que documenta la arquitectura en dos niveles de abstracción, la topología de red AWS, el modelo de identidades y acceso, y las seis Decisiones de Arquitectura (ADRs) que registran formalmente las elecciones de diseño más relevantes con su contexto, justificación y consecuencias. La §4.2 describe el sistema implementado componente a componente: el framework Terraform, el operador GitOps ArgoCD con el patrón App of Apps y Sync Waves, el despliegue de los cinco componentes FIWARE, Kong como Policy Enforcement Point, la gestión de secretos con ESO y los cuatro pipelines CI/CD. La §4.3 presenta la evaluación del modelo mediante los diez KPIs definidos en el Capítulo 3, con las evidencias recogidas del sistema en producción y el análisis de costes del entorno de laboratorio.
+
 ## 4.1 Planificación, Análisis y Requisitos
+
+La fase de planificación tiene por objetivo transformar los requisitos del problema —despliegue automatizado, reproducible y conforme con los estándares europeos de Data Spaces— en decisiones de diseño concretas y trazables. Se parte de los seis principios arquitectónicos que actúan como restricciones transversales a todas las decisiones técnicas, y se construye progresivamente la arquitectura del sistema: primero a nivel contextual y de contenedores mediante el modelo C4, luego a nivel de red e identidades, y finalmente en las Decisiones de Arquitectura (ADRs) que documentan formalmente las elecciones más significativas. Este conjunto de artefactos de diseño constituye la base sobre la que se implementa el sistema descrito en §4.2, y establece los criterios que se evalúan en §4.3.
 
 ### 4.1.1 Principios de Diseño
 
@@ -642,6 +646,8 @@ El flujo de acceso al Data Space implementa el protocolo iSHARE M2M sobre OAuth2
 ---
 
 ## 4.2 Descripción del Sistema Desarrollado
+
+Esta sección describe la implementación técnica del modelo de referencia siguiendo el orden natural de despliegue del sistema, que es también el orden en que las dependencias se resuelven. Se comienza por la capa de infraestructura cloud aprovisionada con Terraform —VPC, EKS, IAM, Secrets Manager y addons de plataforma—, sobre la cual se instala ArgoCD como motor GitOps con el patrón App of Apps. Una vez ArgoCD está operativo, gestiona de forma autónoma el despliegue de los cinco componentes del Data Space FIWARE mediante Sync Waves que respetan el orden de dependencias entre ellos. Kong cierra la cadena actuando como único punto de entrada público al sistema. La gestión de secretos mediante External Secrets Operator y los pipelines de CI/CD para validación y despliegue continuo completan la descripción del sistema. Para cada componente se incluye la configuración relevante, las decisiones de implementación adoptadas y las evidencias del sistema en producción.
 
 ### 4.2.1 Aprovisionamiento de Infraestructura con Terraform
 
