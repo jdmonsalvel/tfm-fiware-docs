@@ -1,5 +1,7 @@
 # 3. Objetivos y Metodología de Trabajo
 
+El presente capítulo define los objetivos del trabajo y describe el marco metodológico adoptado para alcanzarlos. En primer lugar se formula el objetivo general que orienta el conjunto de la investigación, seguido de los seis objetivos específicos que lo descomponen en contribuciones concretas y verificables. A continuación se describe la metodología de trabajo: el paradigma de investigación Design Science Research y las cuatro fases iterativas de desarrollo. El capítulo cierra con la definición de los diez indicadores clave de rendimiento (KPIs) que operacionalizan la evaluación del modelo, organizados en cuatro dimensiones, y con el inventario de herramientas y tecnologías utilizadas con su justificación de selección.
+
 ## 3.1 Objetivo General
 
 Diseñar, implementar y validar un modelo de referencia arquitectónico para el despliegue automatizado de una plataforma de Data Space basada en componentes FIWARE sobre infraestructura AWS, aplicando el paradigma GitOps con ArgoCD como mecanismo central de gestión del ciclo de vida y garantizando reproducibilidad, trazabilidad y conformidad con los estándares europeos de interoperabilidad.
@@ -14,6 +16,12 @@ Diseñar, implementar y validar un modelo de referencia arquitectónico para el 
 - **OE-6:** Validar el modelo mediante un conjunto de pruebas funcionales y métricas operacionales que incluyan tiempo de despliegue, *Recovery Time Objective* (RTO), trazabilidad de cambios y conformidad de seguridad.
 
 ## 3.3 Metodología del Trabajo
+
+El presente trabajo combina dos dimensiones metodológicas complementarias. La primera es la **dimensión de investigación**, que determina el paradigma académico bajo el que se concibe y evalúa la contribución: el Design Science Research (DSR), un enfoque consolidado en Ingeniería de Sistemas de Información orientado a la creación y evaluación de artefactos tecnológicos novedosos (Hevner et al., 2004). La segunda es la **dimensión de desarrollo**, que define el proceso de construcción del sistema: una secuencia de cuatro fases iterativas que van desde el análisis y diseño hasta la validación, siguiendo el ciclo de vida propio del DSR.
+
+La elección del DSR como paradigma se justifica por la naturaleza del problema: no se trata de un estudio descriptivo de fenómenos existentes, sino de la construcción de un artefacto técnico —el modelo de referencia arquitectónico— que resuelve un problema de ingeniería concreto y cuya contribución se evalúa en términos de su utilidad práctica y su rigor técnico. Esta combinación de relevancia práctica y rigor académico es precisamente la característica distintiva del DSR frente a otros paradigmas de investigación en Ciencias de la Computación.
+
+El proceso de desarrollo sigue un modelo iterativo en el que las fases no son estrictamente secuenciales: los resultados de la fase de validación retroalimentan el diseño y la implementación en ciclos sucesivos. En la práctica, esto se materializa en el flujo GitOps adoptado: cada *commit* al repositorio desencadena una validación automática mediante los pipelines de CI/CD, y las discrepancias detectadas generan correcciones que se integran en el siguiente ciclo de despliegue.
 
 ### 3.3.1 Paradigma de Investigación: Design Science Research
 
