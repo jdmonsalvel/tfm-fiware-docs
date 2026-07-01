@@ -626,10 +626,10 @@ Kong se despliega en el *namespace* `provider` mediante el chart oficial `kong/k
 
 | Escenario | Resultado esperado | Mecanismo | Resultado obtenido |
 |-----------|-------------------|-----------|-------------------|
-| Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación | ✅ 401 |
-| Token JWT con firma inválida | `401 Unauthorized` | Kong rechaza verificación de firma | ✅ 401 |
-| Token JWT expirado | `401 Unauthorized` | Kong verifica claim `exp` | ✅ 401 |
-| Token JWT válido (HS256, iss correcto) | `200 OK` + datos NGSI-LD | Kong reenvía a Orion-LD | ✅ 200 |
+| Petición sin header `Authorization` | `401 Unauthorized` | Kong rechaza en pre-autenticación | ✅ 401 `Unauthorized` |
+| Token JWT con firma inválida | `401 Unauthorized` | Kong rechaza verificación de firma (plugin JWT) | ✅ 401 `Invalid signature` |
+| Token de participante no registrado en TIL | `403 Forbidden` | Plugin `pre-function` consulta TIL; el emisor devuelve 404 y Kong bloquea con 403 | ✅ 403 `Forbidden: issuer not registered in Trusted Issuers List` |
+| Token válido de participante registrado en TIL | `200 OK` + datos NGSI-LD | TIL confirma el emisor; Kong reenvía a Orion-LD | ✅ 200 (Orion-LD v1.10.0) |
 
 *Fuente:* Elaboración propia. Mediciones obtenidas del entorno desplegado en Amazon EKS eu-west-1.
 
@@ -653,7 +653,7 @@ Kong se despliega en el *namespace* `provider` mediante el chart oficial `kong/k
 
 *Fuente:* Elaboración propia. Mediciones obtenidas del entorno en producción, región eu-west-1.
 
-El flujo completo de autenticación iSHARE —desde presentación de JWT hasta acceso autorizado a datos NGSI-LD mediado por Kong— está parcialmente pendiente por la ausencia de Kong. Los nodos de confianza (TIL, TIR) y el IdP (Keyrock) están operativos pero con registros vacíos, pendientes de configuración de participantes.
+El flujo completo de autenticación iSHARE —desde presentación de JWT hasta acceso autorizado a datos NGSI-LD mediado por Kong— ha sido validado en su totalidad. Kong actúa como único punto de entrada público: rechaza peticiones sin credenciales (401), bloquea firmas inválidas a nivel de plugin JWT (401), deniega el acceso a participantes cuyo emisor no figure en el TIL (403) y reenvía el tráfico autorizado a Orion-LD (200). Los cuatro escenarios han sido verificados con llamadas reales sobre el entorno desplegado en Amazon EKS eu-west-1.
 
 El *smoke test* E2E en `tests/smoke-test.sh` valida los cuatro pasos del flujo del Data Space:
 
