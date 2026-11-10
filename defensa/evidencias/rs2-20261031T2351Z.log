@@ -1,0 +1,6 @@
+inicio 2026-10-31T23:51:43Z  estado previo: HTTP 200, réplicas 1
+t=0s     kubectl scale --replicas=0
+t=4.5s   servicio caído (HTTP 000), ArgoCD=OutOfSync
+t=6.8s   selfHeal: spec.replicas=1, ArgoCD=Synced
+t=6.8s   pod Ready
+t=6.8s   HTTP 200 vía Kong, ArgoCD=Synced

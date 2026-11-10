@@ -1,0 +1,9 @@
+inicio 2026-10-31T23:53:16Z nodo=ip-10-0-2-243.eu-west-1.compute.internal  previo: sin token HTTP 401, con token HTTP 200
+t=0s     kubectl drain
+t=4.8s   gateway caído (sin token HTTP 000)
+t=21.3s   drain terminado (rc=0)
+t=21.9s   todas las Applications Healthy
+t=64.8s   gateway vuelve (sin token 401), con token HTTP 503
+t=64.9s   estado final: sin token 401, con token 503
+t=95s   TIL arriba: con token HTTP 403 (TIL en memoria, emisor perdido)
+t=101s   smoke-test tras re-registrar el emisor
